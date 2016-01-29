@@ -22,6 +22,9 @@ namespace ClickWar.Game
 
         //##################################################################################
 
+        public int Index
+        { get; set; }
+
         public string Owner
         { get; set; }
 
@@ -44,6 +47,7 @@ namespace ClickWar.Game
         {
             return new MongoDB.Bson.BsonDocument
             {
+                { "Index", this.Index },
                 { "Owner", this.Owner },
                 { "Power", this.Power }
             };
@@ -51,6 +55,7 @@ namespace ClickWar.Game
 
         public void FromBsonDocument(MongoDB.Bson.BsonDocument doc)
         {
+            this.Index = doc["Index"].AsInt32;
             this.Owner = doc["Owner"].AsString;
             this.Power = doc["Power"].AsInt32;
         }

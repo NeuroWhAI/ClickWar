@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core;
-using System.Threading;
+using MongoDB.Driver.Builders;
 
 namespace ClickWar.Util
 {
@@ -151,6 +151,20 @@ namespace ClickWar.Util
 
             var filter = Builders<BsonDocument>.Filter.Exists(documentName);
             col.ReplaceOne(filter, newDoc);
+        }
+
+        public void UpdateDocumentArray(string collectionName, string documentName, string arrayProperty, string indexName,
+            List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate)
+        {
+            var col = this.GetCollection(collectionName);
+            
+            foreach (var itemInfo in indexItemListNeedUpdate)
+            {
+                var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, itemInfo.Key);
+                var update = Builders<BsonDocument>.Update.Set(arrayProperty + "." + itemInfo.Key, itemInfo.Value);
+
+                col.UpdateOne(filter, update);
+           }
         }
     }
 }

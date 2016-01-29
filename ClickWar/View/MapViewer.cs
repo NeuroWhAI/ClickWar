@@ -29,6 +29,11 @@ namespace ClickWar.View
         ~MapViewer()
         {
             m_font.Dispose();
+
+            foreach (var brh in m_playerColor)
+            {
+                brh.Value.Dispose();
+            }
         }
 
         //##################################################################################
@@ -46,6 +51,12 @@ namespace ClickWar.View
 
         //##################################################################################
 
+        protected Dictionary<string, Brush> m_playerColor = new Dictionary<string, Brush>();
+
+        //##################################################################################
+
+        protected readonly Random m_random = new Random();
+
         protected Point m_focusedCoord = new Point(-1, -1);
         protected Brush m_piaColor = Brushes.Aqua;
 
@@ -57,7 +68,7 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        public void OnClick(MouseEventArgs e, Util.DBHelper db, string playerName)
+        public void OnClick(MouseEventArgs e, Util.DBHelper db, string playerName, int powerWay)
         {
             if (this.GameMap == null)
                 return;
@@ -72,8 +83,16 @@ namespace ClickWar.View
             {
                 if (tile.Owner == playerName)
                 {
-                    // 타일 강화
-                    this.GameMap.AddPowerAt(db, x, y, 1);
+                    if (powerWay == 0)
+                    {
+                        // 타일 강화
+                        this.GameMap.AddPowerAt(db, x, y, 1);
+                    }
+                    else
+                    {
+                        // 타일 흡수
+                        this.GameMap.AbsorbTile(db, x, y, powerWay, playerName);
+                    }
                 }
                 else if (this.GameMap.GetPlayerPower(playerName) <= 0)
                 {
@@ -218,7 +237,15 @@ namespace ClickWar.View
                         else if (tile.Owner.Length > 0)
                         {
                             // 적군 지역
-                            fillColor = Brushes.Orange;
+
+                            // 처음 그리는 유저라면 색을 만듬.
+                            if (!m_playerColor.ContainsKey(tile.Owner))
+                            {
+                                Color newColor = Color.FromArgb(m_random.Next(200, 255), m_random.Next(0, 255), m_random.Next(0, 255));
+                                m_playerColor.Add(tile.Owner, new SolidBrush(newColor));
+                            }
+                            
+                            fillColor = m_playerColor[tile.Owner];
                         }
 
                         if (fillColor != null)

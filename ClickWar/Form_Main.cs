@@ -22,12 +22,26 @@ namespace ClickWar
             InitializeComponent();
 
 
+            m_powerWayButtons[0] = this.button_powerWayHere;
+            m_powerWayButtons[1] = this.button_powerWayUp;
+            m_powerWayButtons[2] = this.button_powerWayRight;
+            m_powerWayButtons[3] = this.button_powerWayDown;
+            m_powerWayButtons[4] = this.button_powerWayLeft;
+
+            WhenPowerWayButtonClick(m_powerWayButtons[0]);
+
+
             this.Text = "Click War - " + Application.ProductVersion;
 
 
             m_playerName = playerName;
             this.label_playerName.Text = string.Format("\"{0}\"", playerName);
         }
+
+        //##################################################################################
+
+        protected Button[] m_powerWayButtons = new Button[5];
+        protected int m_powerWayNum = 0;
 
         //##################################################################################
 
@@ -163,8 +177,7 @@ namespace ClickWar
         private void timer_updateSlower_Tick(object sender, EventArgs e)
         {
             // 동기화
-            //m_gameMap.SyncAll(m_db);
-            AddThreadWork(() => m_gameMap.SyncAll(m_db));
+            AddThreadWork(() => m_gameMap.SyncAll(m_db)); // 비동기 작업
 
             // UI 갱신
             this.label_playerPower.Text = m_gameMap.GetPlayerPower(m_playerName).ToString();
@@ -176,14 +189,10 @@ namespace ClickWar
         {
             if (e.Button == MouseButtons.Left && m_bCanClick)
             {
-                //m_mapViewer.OnClick(e, m_db, m_playerName);
-                AddThreadWork(() => m_mapViewer.OnClick(e, m_db, m_playerName));
+                AddThreadWork(() => m_mapViewer.OnClick(e, m_db, m_playerName, m_powerWayNum)); // 비동기 작업
 
                 // 다음 갱신까지 클릭이벤트를 받지 않도록 설정.
-                lock(m_lockObj)
-                {
-                    m_bCanClick = false;
-                }
+                m_bCanClick = false;
 
                 // 자동 동기화 타이머 리셋
                 this.timer_updateSlower.Stop();
@@ -268,6 +277,58 @@ namespace ClickWar
         private void Form_Main_MouseLeave(object sender, EventArgs e)
         {
             m_bMoveCam = false;
+        }
+
+        //##################################################################################
+
+        protected void WhenPowerWayButtonClick(object sender)
+        {
+            int index = 0;
+
+            foreach (var btn in m_powerWayButtons)
+            {
+                if (btn == sender)
+                {
+                    btn.Enabled = false;
+
+                    btn.BackColor = Color.Aqua;
+
+                    m_powerWayNum = index;
+                }
+                else
+                {
+                    btn.Enabled = true;
+
+                    btn.BackColor = Color.FromKnownColor(KnownColor.Control);
+                }
+
+                ++index;
+            }
+        }
+
+        private void button_powerWayHere_Click(object sender, EventArgs e)
+        {
+            WhenPowerWayButtonClick(sender);
+        }
+
+        private void button_powerWayUp_Click(object sender, EventArgs e)
+        {
+            WhenPowerWayButtonClick(sender);
+        }
+
+        private void button_powerWayDown_Click(object sender, EventArgs e)
+        {
+            WhenPowerWayButtonClick(sender);
+        }
+
+        private void button_powerWayLeft_Click(object sender, EventArgs e)
+        {
+            WhenPowerWayButtonClick(sender);
+        }
+
+        private void button_powerWayRight_Click(object sender, EventArgs e)
+        {
+            WhenPowerWayButtonClick(sender);
         }
     }
 }

@@ -204,7 +204,12 @@ namespace ClickWar.Game
                 tileArray[index] = m_tileMap[tileWidthIndex, tileHeightIndex].ToBsonDocument();
 
                 // 동기화
-                db.UpdateDocument("Tiles", "Tiles", tileArrayDoc);
+                //db.UpdateDocument("Tiles", "Tiles", tileArrayDoc);
+                db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
+                    new List<KeyValuePair<int, BsonValue>>()
+                    {
+                        new KeyValuePair<int, BsonValue>(index, tileArray[index])
+                    });
             }
 
 
@@ -220,6 +225,8 @@ namespace ClickWar.Game
 
             if (tileArrayDoc != null && tileArray != null)
             {
+                List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate = new List<KeyValuePair<int, BsonValue>>();
+
                 foreach (var location in indexList)
                 {
                     // 타일맵 범위 초과시 아무것도 안함.
@@ -241,10 +248,15 @@ namespace ClickWar.Game
 
                     // 타일 내용 갱신.
                     tileArray[index] = m_tileMap[location.X, location.Y].ToBsonDocument();
+
+
+                    indexItemListNeedUpdate.Add(new KeyValuePair<int, BsonValue>(index, tileArray[index]));
                 }
 
                 // 동기화
-                db.UpdateDocument("Tiles", "Tiles", tileArrayDoc);
+                //db.UpdateDocument("Tiles", "Tiles", tileArrayDoc);
+                db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
+                    indexItemListNeedUpdate);
             }
 
 
@@ -398,6 +410,54 @@ namespace ClickWar.Game
 
 
             return bBuild;
+        }
+
+        public void AbsorbTile(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex, int dirNum,
+            string playerName)
+        {
+            if (dirNum <= 0 || dirNum > 4)
+                return;
+
+            --dirNum;
+
+
+            // 선택된 타일 얻기.
+            var tile = this.GetTileAt(tileWidthIndex, tileHeightIndex);
+            if (tile == null)
+                return;
+
+
+            // 방향을 가지고 좌표 계산
+            int[] dirX = new int[4]
+            {
+                tileWidthIndex, tileWidthIndex + 1, tileWidthIndex, tileWidthIndex - 1
+            };
+            int[] dirY = new int[4]
+            {
+                tileHeightIndex - 1, tileHeightIndex, tileHeightIndex + 1, tileHeightIndex
+            };
+
+
+            // 목표 타일 얻기
+            var targetTile = this.GetTileAt(dirX[dirNum], dirY[dirNum]);
+
+            if (targetTile != null)
+            {
+                // 힘 이동
+                int cost = tile.Power / 2;
+                tile.Power -= cost;
+                targetTile.Power += cost;
+
+                // 힘의 이동이 있었으면 변경사항 업로드.
+                if (cost > 0)
+                {
+                    this.UploadTileForeach(db, new Point[]
+                    {
+                        new Point(dirX[dirNum], dirY[dirNum]),
+                        new Point(tileWidthIndex, tileHeightIndex),
+                    });
+                }
+            }
         }
 
         //##################################################################################

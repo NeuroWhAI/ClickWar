@@ -42,9 +42,16 @@
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.button_logout = new System.Windows.Forms.Button();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.button_powerWayHere = new System.Windows.Forms.Button();
+            this.button_powerWayUp = new System.Windows.Forms.Button();
+            this.button_powerWayDown = new System.Windows.Forms.Button();
+            this.button_powerWayLeft = new System.Windows.Forms.Button();
+            this.button_powerWayRight = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
+            this.groupBox4.SuspendLayout();
             this.SuspendLayout();
             // 
             // timer_update
@@ -159,11 +166,77 @@
             this.button_logout.UseVisualStyleBackColor = true;
             this.button_logout.Click += new System.EventHandler(this.button_logout_Click);
             // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.button_powerWayRight);
+            this.groupBox4.Controls.Add(this.button_powerWayLeft);
+            this.groupBox4.Controls.Add(this.button_powerWayDown);
+            this.groupBox4.Controls.Add(this.button_powerWayUp);
+            this.groupBox4.Controls.Add(this.button_powerWayHere);
+            this.groupBox4.Location = new System.Drawing.Point(445, 12);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(229, 68);
+            this.groupBox4.TabIndex = 3;
+            this.groupBox4.TabStop = false;
+            this.groupBox4.Text = "Power Way";
+            // 
+            // button_powerWayHere
+            // 
+            this.button_powerWayHere.Font = new System.Drawing.Font("굴림", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
+            this.button_powerWayHere.Location = new System.Drawing.Point(6, 24);
+            this.button_powerWayHere.Name = "button_powerWayHere";
+            this.button_powerWayHere.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayHere.TabIndex = 4;
+            this.button_powerWayHere.Text = "◎";
+            this.button_powerWayHere.UseVisualStyleBackColor = true;
+            this.button_powerWayHere.Click += new System.EventHandler(this.button_powerWayHere_Click);
+            // 
+            // button_powerWayUp
+            // 
+            this.button_powerWayUp.Location = new System.Drawing.Point(61, 24);
+            this.button_powerWayUp.Name = "button_powerWayUp";
+            this.button_powerWayUp.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayUp.TabIndex = 5;
+            this.button_powerWayUp.Text = "↑";
+            this.button_powerWayUp.UseVisualStyleBackColor = true;
+            this.button_powerWayUp.Click += new System.EventHandler(this.button_powerWayUp_Click);
+            // 
+            // button_powerWayDown
+            // 
+            this.button_powerWayDown.Location = new System.Drawing.Point(103, 24);
+            this.button_powerWayDown.Name = "button_powerWayDown";
+            this.button_powerWayDown.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayDown.TabIndex = 6;
+            this.button_powerWayDown.Text = "↓";
+            this.button_powerWayDown.UseVisualStyleBackColor = true;
+            this.button_powerWayDown.Click += new System.EventHandler(this.button_powerWayDown_Click);
+            // 
+            // button_powerWayLeft
+            // 
+            this.button_powerWayLeft.Location = new System.Drawing.Point(145, 24);
+            this.button_powerWayLeft.Name = "button_powerWayLeft";
+            this.button_powerWayLeft.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayLeft.TabIndex = 7;
+            this.button_powerWayLeft.Text = "←";
+            this.button_powerWayLeft.UseVisualStyleBackColor = true;
+            this.button_powerWayLeft.Click += new System.EventHandler(this.button_powerWayLeft_Click);
+            // 
+            // button_powerWayRight
+            // 
+            this.button_powerWayRight.Location = new System.Drawing.Point(187, 24);
+            this.button_powerWayRight.Name = "button_powerWayRight";
+            this.button_powerWayRight.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayRight.TabIndex = 8;
+            this.button_powerWayRight.Text = "→";
+            this.button_powerWayRight.UseVisualStyleBackColor = true;
+            this.button_powerWayRight.Click += new System.EventHandler(this.button_powerWayRight_Click);
+            // 
             // Form_Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(782, 653);
+            this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
@@ -183,6 +256,7 @@
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);
+            this.groupBox4.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -200,6 +274,12 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.Button button_logout;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.Button button_powerWayRight;
+        private System.Windows.Forms.Button button_powerWayLeft;
+        private System.Windows.Forms.Button button_powerWayDown;
+        private System.Windows.Forms.Button button_powerWayUp;
+        private System.Windows.Forms.Button button_powerWayHere;
     }
 }
 
