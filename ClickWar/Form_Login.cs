@@ -70,13 +70,19 @@ namespace ClickWar
             }
             else
             {
-                if (int.Parse(versionData[0]) < int.Parse(versionDoc["v0"].AsString)
-                    ||
-                    int.Parse(versionData[1]) < int.Parse(versionDoc["v1"].AsString)
-                    ||
-                    int.Parse(versionData[2]) < int.Parse(versionDoc["v2"].AsString)
-                    ||
-                    int.Parse(versionData[3]) < int.Parse(versionDoc["v3"].AsString))
+                bool updateExist = false;
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    if (int.Parse(versionData[i]) < int.Parse(versionDoc["v" + i].AsString))
+                    {
+                        updateExist = true;
+
+                        break;
+                    }
+                }
+
+                if (updateExist)
                 {
                     var dlgResult = MessageBox.Show("업데이트가 있습니다.\n다운로드 하시겠습니까?", "Info",
                         MessageBoxButtons.YesNo, MessageBoxIcon.Question);
