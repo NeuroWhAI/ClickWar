@@ -95,8 +95,8 @@ namespace ClickWar.Game
                 this.ShutdownMessage = msg;
 
 
-                // 이벤트 발생
-                if (m_prevShutMsg != msg && this.WhenShutdownMessageChanged != null)
+                // 메세지가 있고 이전 메세지와 다르면 이벤트 발생
+                if (msg.Length > 0 && m_prevShutMsg != msg && this.WhenShutdownMessageChanged != null)
                     this.WhenShutdownMessageChanged(msg, flag);
 
 

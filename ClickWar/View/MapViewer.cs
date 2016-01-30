@@ -288,15 +288,18 @@ namespace ClickWar.View
                                     });
                             }
 
-                            g.DrawString(string.Format("#{0}", tile.Power), m_font,
-                                Brushes.Black,
-                                Location.X + w * TileSize + TileSize / 2,
-                                Location.Y + h * TileSize + TileSize / 2 + 9,
-                                new StringFormat()
-                                {
-                                    Alignment = StringAlignment.Center,
-                                    LineAlignment = StringAlignment.Center
-                                });
+                            if (tile.Power != 0)
+                            {
+                                g.DrawString(string.Format("#{0}", tile.Power), m_font,
+                                    Brushes.Black,
+                                    Location.X + w * TileSize + TileSize / 2,
+                                    Location.Y + h * TileSize + TileSize / 2 + 9,
+                                    new StringFormat()
+                                    {
+                                        Alignment = StringAlignment.Center,
+                                        LineAlignment = StringAlignment.Center
+                                    });
+                            }
                         }
                     }
                 }

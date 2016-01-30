@@ -22,6 +22,9 @@ namespace ClickWar
             InitializeComponent();
 
 
+            this.MouseWheel += Form_Main_MouseWheel;
+
+
             m_powerWayButtons[0] = this.button_powerWayHere;
             m_powerWayButtons[1] = this.button_powerWayUp;
             m_powerWayButtons[2] = this.button_powerWayRight;
@@ -77,20 +80,23 @@ namespace ClickWar
         {
             while (m_runningThread)
             {
-                while (m_threadWorkList.Count > 0 && m_runningThread)
+                int workCount = m_threadWorkList.Count;
+
+                for (int i = 0; i < workCount; ++i)
                 {
-                    var job = m_threadWorkList[0];
+                    if (m_threadWorkList[i] == null)
+                        continue;
+
+
+                    var job = m_threadWorkList[i];
 
                     job();
 
 
                     lock (m_lockObj)
                     {
-                        m_threadWorkList.RemoveAt(0);
+                        m_threadWorkList[i] = null;
                     }
-
-
-                    m_bCanClick = true;
 
 
                     Thread.Sleep(10);
@@ -101,13 +107,22 @@ namespace ClickWar
             }
         }
 
-        protected bool AddThreadWork(Action work)
+        protected bool AddThreadWork(Action work, int workNum)
         {
-            if (m_threadWorkList.Count < 2)
+            while (m_threadWorkList.Count <= workNum)
+            {
+                lock(m_lockObj)
+                {
+                    m_threadWorkList.Add(null);
+                }
+            }
+
+
+            if (m_threadWorkList[workNum] == null)
             {
                 lock (m_lockObj)
                 {
-                    m_threadWorkList.Add(work);
+                    m_threadWorkList[workNum] = work;
                 }
 
 
@@ -173,8 +188,14 @@ namespace ClickWar
         {
             //m_db.WaitAllTask();
 
-            m_runningThread = false;
-            m_gameThread.Join();
+            if (m_gameThread != null)
+            {
+                m_runningThread = false;
+
+                m_gameThread.Join();
+                m_gameThread.Interrupt();
+                m_gameThread = null;
+            }
 
             Application.Exit();
         }
@@ -194,10 +215,7 @@ namespace ClickWar
         private void timer_updateSlower_Tick(object sender, EventArgs e)
         {
             // 동기화
-            Point startIdx = new Point(), endIdx = new Point();
-            m_mapViewer.GetIndexRect(this.Size, ref startIdx, ref endIdx);
-
-            AddThreadWork(() => m_gameMap.SyncAllRect(m_db, startIdx, endIdx)); // 비동기 작업
+            AddThreadWork(() => m_gameMap.SyncAll(m_db), 0); // 비동기 작업
 
             if (m_gameMap.ShutdownFlag)
                 Application.Exit();
@@ -226,7 +244,10 @@ namespace ClickWar
 
                     // 클릭 처리 (비동기)
                     m_prevClickCount = m_clickCount;
-                    bool bSuccess = AddThreadWork(() => m_mapViewer.OnClick(e, m_prevClickCount, m_db, m_playerName, m_powerWayNum, this.Size));
+                    bool bSuccess = AddThreadWork(() => {
+                        m_mapViewer.OnClick(e, m_prevClickCount, m_db, m_playerName, m_powerWayNum, this.Size);
+                        m_bCanClick = true;
+                    }, 1);
 
                     // 클릭처리작업 추가 성공시
                     if (bSuccess)
@@ -258,19 +279,49 @@ namespace ClickWar
 
         //##################################################################################
 
+        protected void ViewScaleChange(int delta)
+        {
+            if (delta < 0)
+            {
+                if (m_mapViewer.TileSize > -delta + 1)
+                {
+                    m_mapViewer.TileSize += delta;
+                }
+            }
+            else
+            {
+                if (m_mapViewer.TileSize < 256)
+                {
+                    m_mapViewer.TileSize += delta;
+                }
+            }
+
+            // 확대/축소에 따라 화면도 보던 곳을 추적.
+            int camMoveX = delta * (m_mapViewer.Location.X - this.Size.Width / 2) / m_mapViewer.TileSize;
+            int camMoveY = delta * (m_mapViewer.Location.Y - this.Size.Height / 2) / m_mapViewer.TileSize;
+
+            m_mapViewer.Location = new Point(m_mapViewer.Location.X + camMoveX, m_mapViewer.Location.Y + camMoveY);
+        }
+
         private void button_scaleUp_Click(object sender, EventArgs e)
         {
-            if (m_mapViewer.TileSize < 256)
-            {
-                m_mapViewer.TileSize += 4;
-            }
+            ViewScaleChange(4);
         }
 
         private void button_scaleDown_Click(object sender, EventArgs e)
         {
-            if (m_mapViewer.TileSize > 5)
+            ViewScaleChange(-4);
+        }
+
+        private void Form_Main_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (e.Delta < 0)
             {
-                m_mapViewer.TileSize -= 4;
+                ViewScaleChange(-4);
+            }
+            else if(e.Delta > 0)
+            {
+                ViewScaleChange(4);
             }
         }
 

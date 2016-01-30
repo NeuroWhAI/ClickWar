@@ -78,7 +78,7 @@ namespace ClickWar.Util
         {
             this.WaitAllTask();
 
-            m_task = Task.Factory.StartNew(() => callback(GetCollection(name))); 
+            m_task = Task.Factory.StartNew(() => callback(GetCollection(name)));
         }
 
         public bool CheckPropertyOverlap(string collectionName, string propertyName, string checkValue)
@@ -116,7 +116,7 @@ namespace ClickWar.Util
             document.Add(new BsonElement(documentName, ""));
 
             col.InsertOne(document);
-            
+
 
             return document;
         }
@@ -157,14 +157,14 @@ namespace ClickWar.Util
             List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate)
         {
             var col = this.GetCollection(collectionName);
-            
+
             foreach (var itemInfo in indexItemListNeedUpdate)
             {
                 var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, itemInfo.Key);
                 var update = Builders<BsonDocument>.Update.Set(arrayProperty + "." + itemInfo.Key, itemInfo.Value);
 
                 col.UpdateOne(filter, update);
-           }
+            }
         }
     }
 }
