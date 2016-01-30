@@ -35,6 +35,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.button_login = new System.Windows.Forms.Button();
             this.button_exit = new System.Windows.Forms.Button();
+            this.checkBox_autoLogin = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -75,7 +76,7 @@
             // 
             // button_login
             // 
-            this.button_login.Location = new System.Drawing.Point(12, 94);
+            this.button_login.Location = new System.Drawing.Point(12, 117);
             this.button_login.Name = "button_login";
             this.button_login.Size = new System.Drawing.Size(149, 33);
             this.button_login.TabIndex = 4;
@@ -86,7 +87,7 @@
             // button_exit
             // 
             this.button_exit.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.button_exit.Location = new System.Drawing.Point(161, 94);
+            this.button_exit.Location = new System.Drawing.Point(161, 117);
             this.button_exit.Name = "button_exit";
             this.button_exit.Size = new System.Drawing.Size(149, 33);
             this.button_exit.TabIndex = 5;
@@ -94,13 +95,24 @@
             this.button_exit.UseVisualStyleBackColor = true;
             this.button_exit.Click += new System.EventHandler(this.button_exit_Click);
             // 
+            // checkBox_autoLogin
+            // 
+            this.checkBox_autoLogin.AutoSize = true;
+            this.checkBox_autoLogin.Location = new System.Drawing.Point(12, 87);
+            this.checkBox_autoLogin.Name = "checkBox_autoLogin";
+            this.checkBox_autoLogin.Size = new System.Drawing.Size(95, 19);
+            this.checkBox_autoLogin.TabIndex = 6;
+            this.checkBox_autoLogin.Text = "Auto login";
+            this.checkBox_autoLogin.UseVisualStyleBackColor = true;
+            // 
             // Form_Login
             // 
             this.AcceptButton = this.button_login;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.button_exit;
-            this.ClientSize = new System.Drawing.Size(322, 139);
+            this.ClientSize = new System.Drawing.Size(322, 162);
+            this.Controls.Add(this.checkBox_autoLogin);
             this.Controls.Add(this.button_exit);
             this.Controls.Add(this.button_login);
             this.Controls.Add(this.textBox_password);
@@ -128,5 +140,6 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button button_login;
         private System.Windows.Forms.Button button_exit;
+        private System.Windows.Forms.CheckBox checkBox_autoLogin;
     }
 }

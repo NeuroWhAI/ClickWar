@@ -96,6 +96,27 @@ namespace ClickWar
                     }
                 }
             }
+
+
+            // 자동 로그인 확인
+            this.checkBox_autoLogin.Checked = Util.RegistryHelper.GetDataAsBool("AutoLoginFlag", false);
+            if (this.checkBox_autoLogin.Checked)
+            {
+                this.textBox_name.Enabled = false;
+                this.textBox_password.Enabled = false;
+                this.button_login.Enabled = false;
+                
+                this.textBox_name.Text = Util.RegistryHelper.GetData("LoginName", "");
+
+                var key = Util.RegistryHelper.GetData("LoginKey", "");
+                this.textBox_password.Text = Util.EncoderDecoder.Decode(Util.RegistryHelper.GetData("LoginPass", ""),
+                Enumerable.Range(0, key.Length)
+                     .Where(x => x % 2 == 0)
+                     .Select(x => Convert.ToByte(key.Substring(x, 2), 16))
+                     .ToArray());
+
+                m_db.GetDocumentAsync("Users", this.textBox_name.Text, this.WhenReceiveDocument);
+            }
         }
 
         private void Form_Login_FormClosing(object sender, FormClosingEventArgs e)
@@ -120,7 +141,6 @@ namespace ClickWar
                 this.textBox_name.Enabled = false;
                 this.textBox_password.Enabled = false;
                 this.button_login.Enabled = false;
-                //this.button_exit.Enabled = false;
 
                 m_db.GetDocumentAsync("Users", this.textBox_name.Text, this.WhenReceiveDocument);
             }
@@ -137,6 +157,38 @@ namespace ClickWar
         }
 
         //##################################################################################
+
+        protected void UpdateAutoLogin()
+        {
+            if (Util.RegistryHelper.GetDataAsBool("AutoLoginFlag", false) != this.checkBox_autoLogin.Checked)
+            {
+                if (this.checkBox_autoLogin.Checked)
+                {
+                    Util.RegistryHelper.SetData("LoginName", this.textBox_name.Text);
+
+
+                    RijndaelManaged aes = new RijndaelManaged();
+                    aes.KeySize = 256;
+                    aes.BlockSize = 128;
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.GenerateKey();
+
+                    string hexData = Util.EncoderDecoder.Encode(this.textBox_password.Text, aes.Key);
+                    Util.RegistryHelper.SetData("LoginPass", hexData);
+
+                    Util.RegistryHelper.SetData("LoginKey", BitConverter.ToString(aes.Key).Replace("-", ""));
+                }
+                else
+                {
+                    Util.RegistryHelper.SetData("LoginName", "");
+                    Util.RegistryHelper.SetData("LoginPass", "");
+                    Util.RegistryHelper.SetData("LoginKey", "");
+                }
+
+                Util.RegistryHelper.SetData<bool>("AutoLoginFlag", this.checkBox_autoLogin.Checked);
+            }
+        }
 
         protected void SequenceToGame()
         {
@@ -161,7 +213,6 @@ namespace ClickWar
             this.textBox_name.Invoke(new MethodInvoker(() => this.textBox_name.Enabled = true));
             this.textBox_password.Invoke(new MethodInvoker(() => this.textBox_password.Enabled = true));
             this.button_login.Invoke(new MethodInvoker(() => this.button_login.Enabled = true));
-            //this.button_exit.Invoke(new MethodInvoker(() => this.button_exit.Enabled = true));
 
 
             if (userDoc == null)
@@ -226,6 +277,10 @@ namespace ClickWar
                     return;
                 }
             }
+
+
+            // 자동 로그인 정보 갱신
+            this.Invoke(new MethodInvoker(() => this.UpdateAutoLogin()));
 
 
             // 게임 화면 띄우기

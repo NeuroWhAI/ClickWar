@@ -55,8 +55,6 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        protected readonly Random m_random = new Random();
-
         protected Point m_focusedCoord = new Point(-1, -1);
         protected Brush m_piaColor = Brushes.Aqua;
 
@@ -241,8 +239,7 @@ namespace ClickWar.View
                             // 처음 그리는 유저라면 색을 만듬.
                             if (!m_playerColor.ContainsKey(tile.Owner))
                             {
-                                Color newColor = Color.FromArgb(m_random.Next(200, 255), m_random.Next(0, 255), m_random.Next(0, 255));
-                                m_playerColor.Add(tile.Owner, new SolidBrush(newColor));
+                                m_playerColor.Add(tile.Owner, new SolidBrush(Util.Utility.GetRandomColor()));
                             }
                             
                             fillColor = m_playerColor[tile.Owner];

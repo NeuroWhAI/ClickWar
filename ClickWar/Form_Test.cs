@@ -25,7 +25,7 @@ namespace ClickWar
             aes.Padding = PaddingMode.PKCS7;
             aes.GenerateKey();
 
-            string hexData = Util.EncoderDecoder.Encode("mongodb://user:he11owor1d@ds053295.mongolab.com:53295/click_war", aes.Key);
+            string hexData = Util.EncoderDecoder.Encode("접속 주소", aes.Key);
             this.textBox1.Text = hexData;
 
             var chArr = BitConverter.ToString(aes.Key).Replace("-", "").ToCharArray();

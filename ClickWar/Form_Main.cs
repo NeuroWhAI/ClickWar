@@ -86,7 +86,6 @@ namespace ClickWar
                         m_bCanClick = true;
                     }
 
-                    this.Invoke(new Action(() => this.Cursor = Cursors.Default));
 
                     Thread.Sleep(10);
                 }
@@ -98,7 +97,7 @@ namespace ClickWar
 
         protected void AddThreadWork(Action work)
         {
-            lock(m_lockObj)
+            lock (m_lockObj)
             {
                 m_threadWorkList.Add(work);
             }
