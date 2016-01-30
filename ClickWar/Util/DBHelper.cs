@@ -22,7 +22,7 @@ namespace ClickWar.Util
             key = new string(keyBytes);
 
             // 암호 복호화
-            m_dbURI = Util.EncoderDecoder.Decode("jG3nGBqlTCS3cFKUikMcpnsa/+9RiwqTO5Wi4xVBoPthUbtW8XkusvncaYNZbUqNW7egGdusSScpHqE9RPqx1w==",
+            m_dbURI = Util.EncoderDecoder.Decode("ee5I9DdM8/y/jNaPsKAojoB4k83aGvwUWUY6ksQe2Oap86cb17PE6rufJxXHPD1OOCTP56t4AbL0g3XSdCRM+w==",
                 Enumerable.Range(0, key.Length)
                      .Where(x => x % 2 == 0)
                      .Select(x => Convert.ToByte(key.Substring(x, 2), 16))

@@ -55,7 +55,7 @@ namespace ClickWar.Game
 
         public void FromBsonDocument(MongoDB.Bson.BsonDocument doc)
         {
-            this.Index = doc["Index"].AsInt32;
+            //this.Index = doc["Index"].AsInt32;
             this.Owner = doc["Owner"].AsString;
             this.Power = doc["Power"].AsInt32;
         }

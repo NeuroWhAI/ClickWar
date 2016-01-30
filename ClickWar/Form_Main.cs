@@ -86,6 +86,8 @@ namespace ClickWar
                         m_bCanClick = true;
                     }
 
+                    this.Invoke(new Action(() => this.Cursor = Cursors.Default));
+
                     Thread.Sleep(10);
                 }
 
@@ -170,8 +172,6 @@ namespace ClickWar
         private void timer_update_Tick(object sender, EventArgs e)
         {
             this.Invalidate();
-
-            //m_bCanClick = true;
         }
 
         private void timer_updateSlower_Tick(object sender, EventArgs e)
@@ -193,6 +193,7 @@ namespace ClickWar
 
                 // 다음 갱신까지 클릭이벤트를 받지 않도록 설정.
                 m_bCanClick = false;
+                this.Cursor = Cursors.WaitCursor;
 
                 // 자동 동기화 타이머 리셋
                 this.timer_updateSlower.Stop();

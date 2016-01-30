@@ -117,8 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ShieldInfo" xml:space="preserve">
-    <value>2A517217731D0A5DDA6C08E2B78478B6F4959BAA5605193E169E330465484994</value>
-    <comment>Fuck you hacker</comment>
-  </data>
 </root>

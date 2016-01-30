@@ -61,7 +61,7 @@ namespace ClickWar.Properties {
         }
         
         /// <summary>
-        ///   CC4E5027678E482E904D46CE29FF4A16C8F8889CD2794FDF7E548D182D6280D7과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   2A517217731D0A5DDA6C08E2B78478B6F4959BAA5605193E169E330465484994과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string ShieldInfo {
             get {

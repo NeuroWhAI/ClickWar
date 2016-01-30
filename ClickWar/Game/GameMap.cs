@@ -80,6 +80,7 @@ namespace ClickWar.Game
                     for (int h = 0; h < height; ++h)
                     {
                         m_tileMap[w, h] = new GameTile();
+                        m_tileMap[w, h].Index = w * height + h;
                     }
                 }
             }
@@ -197,7 +198,9 @@ namespace ClickWar.Game
                 // 타일배열 크기 갱신
                 while (index >= tileArray.Count)
                 {
-                    tileArray.Add(new GameTile().ToBsonDocument());
+                    var newTile = new GameTile();
+                    newTile.Index = index;
+                    tileArray.Add(newTile.ToBsonDocument());
                 }
 
                 // 타일 내용 갱신.
@@ -243,7 +246,9 @@ namespace ClickWar.Game
                     // 타일배열 크기 갱신
                     while (index >= tileArray.Count)
                     {
-                        tileArray.Add(new GameTile().ToBsonDocument());
+                        var newTile = new GameTile();
+                        newTile.Index = index;
+                        tileArray.Add(newTile.ToBsonDocument());
                     }
 
                     // 타일 내용 갱신.
@@ -423,7 +428,7 @@ namespace ClickWar.Game
 
             // 선택된 타일 얻기.
             var tile = this.GetTileAt(tileWidthIndex, tileHeightIndex);
-            if (tile == null)
+            if (tile == null || tile.Owner != playerName)
                 return;
 
 

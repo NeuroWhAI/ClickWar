@@ -87,6 +87,13 @@ namespace ClickWar
 
                         Application.Exit();
                     }
+                    else
+                    {
+                        MessageBox.Show("최신버전의 클라이언트로만 접속할 수 있습니다.", "Error!",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                        Application.Exit();
+                    }
                 }
             }
         }
