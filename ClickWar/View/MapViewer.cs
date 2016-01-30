@@ -30,10 +30,10 @@ namespace ClickWar.View
         {
             m_font.Dispose();
 
-            foreach (var brh in m_playerColor)
+            /*foreach (var brh in m_playerColor)
             {
                 brh.Value.Dispose();
-            }
+            }*/
         }
 
         //##################################################################################
@@ -51,7 +51,7 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        protected Dictionary<string, Brush> m_playerColor = new Dictionary<string, Brush>();
+        protected Dictionary<string, Color> m_playerColor = new Dictionary<string, Color>();
 
         //##################################################################################
 
@@ -66,10 +66,17 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        public void OnClick(MouseEventArgs e, Util.DBHelper db, string playerName, int powerWay)
+        protected Point m_cursor = new Point(0, 0);
+
+        //##################################################################################
+
+        public void OnClick(MouseEventArgs e, int clickCount, Util.DBHelper db, string playerName, int powerWay, Size screenSize)
         {
             if (this.GameMap == null)
                 return;
+
+
+            m_cursor = e.Location;
 
 
             int x = (e.X - Location.X) / TileSize;
@@ -84,7 +91,7 @@ namespace ClickWar.View
                     if (powerWay == 0)
                     {
                         // 타일 강화
-                        this.GameMap.AddPowerAt(db, x, y, 1);
+                        this.GameMap.AddPowerAt(db, x, y, clickCount);
                     }
                     else
                     {
@@ -111,13 +118,19 @@ namespace ClickWar.View
                 }
             }
 
-            this.GameMap.SyncAll(db);
+            //this.GameMap.SyncAll(db);
+            Point startPos = new Point(), endPos = new Point();
+            GetIndexRect(screenSize, ref startPos, ref endPos);
+            this.GameMap.SyncTileRect(db, startPos, endPos);
         }
 
         public void OnMove(MouseEventArgs e, Util.DBHelper db, string playerName)
         {
             if (this.GameMap == null)
                 return;
+
+
+            m_cursor = e.Location;
 
 
             int x = (e.X - Location.X) / TileSize;
@@ -191,7 +204,7 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        public int DrawMap(Graphics g, string playerName, Size screenSize)
+        public int DrawMap(Graphics g, string playerName, int clickCount, Size screenSize)
         {
             if (this.GameMap == null)
                 return -1;
@@ -200,20 +213,14 @@ namespace ClickWar.View
             int width = this.GameMap.Width;
             int height = this.GameMap.Height;
 
-            int startX = -Location.X / TileSize;
-            int startY = -Location.Y / TileSize;
-
-            if (startX < 0) startX = 0;
-            if (startY < 0) startY = 0;
-
-            int endX = startX + screenSize.Width / TileSize;
-            int endY = startY + screenSize.Height / TileSize;
+            Point startPos = new Point(), endPos = new Point();
+            GetIndexRect(screenSize, ref startPos, ref endPos);
 
 
             // 타일 정보 그리기
-            for (int w = startX; w <= endX; ++w)
+            for (int w = startPos.X; w <= endPos.X; ++w)
             {
-                for (int h = startY; h <= endY; ++h)
+                for (int h = startPos.Y; h <= endPos.Y; ++h)
                 {
                     var tile = this.GameMap.GetTileAt(w, h);
 
@@ -221,6 +228,7 @@ namespace ClickWar.View
                     {
                         // 타일 색 채우기
                         Brush fillColor = null;
+                        bool needDispose = false;
 
                         if (w == m_focusedCoord.X && h == m_focusedCoord.Y)
                         {
@@ -239,16 +247,28 @@ namespace ClickWar.View
                             // 처음 그리는 유저라면 색을 만듬.
                             if (!m_playerColor.ContainsKey(tile.Owner))
                             {
-                                m_playerColor.Add(tile.Owner, new SolidBrush(Util.Utility.GetRandomColor()));
+                                m_playerColor.Add(tile.Owner, Util.Utility.GetRandomColor());
                             }
-                            
-                            fillColor = m_playerColor[tile.Owner];
+
+                            Color color = m_playerColor[tile.Owner];
+
+                            int alpha = 120 + tile.Power / 2;
+                            if (alpha < 120) alpha = 120;
+                            else if (alpha > 255) alpha = 255;
+
+                            color = Color.FromArgb(color.ToArgb() & 0x00ffffff | (alpha << 24));
+
+                            fillColor = new SolidBrush(color);
+                            needDispose = true;
                         }
 
                         if (fillColor != null)
                         {
                             g.FillRectangle(fillColor, Location.X + w * TileSize,
                                 Location.Y + h * TileSize, TileSize, TileSize);
+
+                            if (needDispose)
+                                fillColor.Dispose();
                         }
 
 
@@ -287,35 +307,70 @@ namespace ClickWar.View
             g.DrawRectangle(Pens.Black, Location.X, Location.Y,
                 width * TileSize, height * TileSize);
 
-            /*for (int w = 1; w < width; ++w)
-            {
-                int lineX = Location.X + w * TileSize;
 
-                g.DrawLine(Pens.Black, lineX, Location.Y, lineX, Location.Y + height * TileSize);
+            // 영토 경계선 그리기
+            for (int w = startPos.X; w <= endPos.X; ++w)
+            {
+                for (int h = startPos.Y; h <= endPos.Y; ++h)
+                {
+                    var tile = this.GameMap.GetTileAt(w, h);
+
+                    if (tile == null)
+                        continue;
+
+
+                    int[] nearX = new int[]
+                    {
+                        w, w + 1//, w, w - 1
+                    };
+                    int[] nearY = new int[]
+                    {
+                        h - 1, h//, h + 1, h
+                    };
+
+                    for (int i = 0; i < 2; ++i)
+                    {
+                        var nearTile = this.GameMap.GetTileAt(nearX[i], nearY[i]);
+
+                        if (nearTile != null && nearTile.Owner != tile.Owner)
+                        {
+                            switch (i)
+                            {
+                                case 0:
+                                    g.DrawLine(Pens.Black,
+                                        Location.X + w * TileSize, Location.Y + h * TileSize,
+                                        Location.X + w * TileSize + TileSize, Location.Y + h * TileSize);
+                                    break;
+
+                                case 1:
+                                    g.DrawLine(Pens.Black,
+                                        Location.X + w * TileSize + TileSize, Location.Y + h * TileSize,
+                                        Location.X + w * TileSize + TileSize, Location.Y + h * TileSize + TileSize);
+                                    break;
+                            }
+                        }
+                    }
+                }
             }
-
-            for (int h = 1; h < height; ++h)
-            {
-                int lineY = Location.Y + h * TileSize;
-
-                g.DrawLine(Pens.Black, Location.X, lineY, Location.X + width * TileSize, lineY);
-            }*/
 
 
             // 효과 그리기 및 갱신
-            List<CircleEffect> eraseEffectList = new List<CircleEffect>();
-            foreach (var circleEffect in m_circleEffectList)
+            var circleEffectListClone = m_circleEffectList.ToArray();
+            foreach (var circleEffect in circleEffectListClone)
             {
                 circleEffect.Draw(g);
 
                 // 효과가 끝났으면 삭제목록에 추가
                 if (circleEffect.IsEnd)
-                    eraseEffectList.Add(circleEffect);
+                    m_circleEffectList.Remove(circleEffect);
             }
 
-            foreach (var eraseEffect in eraseEffectList)
+
+            // 클릭 카운트 표시
+            using (Pen pen = new Pen(Color.DarkBlue, 3.0f))
             {
-                m_circleEffectList.Remove(eraseEffect);
+                g.DrawPie(pen, m_cursor.X - 16.0f, m_cursor.Y - 16.0f, 32.0f, 32.0f,
+                    65.0f, clickCount * 36.0f);
             }
 
 
@@ -327,6 +382,51 @@ namespace ClickWar.View
         public void AddCircleEffect(CircleEffect effect)
         {
             m_circleEffectList.Add(effect);
+        }
+
+        public void ReColorAll()
+        {
+            List<string> nameList = new List<string>(); 
+
+            foreach(var colorInfo in m_playerColor)
+            {
+                //colorInfo.Value.Dispose();
+
+                nameList.Add(colorInfo.Key);
+            }
+
+            m_playerColor.Clear();
+
+            foreach (var name in nameList)
+            {
+                //m_playerColor[name] = new SolidBrush(Util.Utility.GetRandomColor());
+                m_playerColor[name] = Util.Utility.GetRandomColor();
+            }
+        }
+
+        public void GetIndexRect(Size screenSize, ref Point startPos, ref Point endPos)
+        {
+            int width = this.GameMap.Width;
+            int height = this.GameMap.Height;
+
+            int startX = -Location.X / TileSize;
+            int startY = -Location.Y / TileSize;
+
+            if (startX < 0) startX = 0;
+            if (startY < 0) startY = 0;
+
+            int endX = startX + screenSize.Width / TileSize;
+            int endY = startY + screenSize.Height / TileSize;
+
+            if (endX >= width) endX = width - 1;
+            if (endY >= height) endY = height - 1;
+
+
+            startPos.X = startX;
+            startPos.Y = startY;
+
+            endPos.X = endX;
+            endPos.Y = endY;
         }
     }
 }

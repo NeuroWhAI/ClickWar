@@ -72,6 +72,12 @@
     <Compile Include="Form_Login.Designer.cs">
       <DependentUpon>Form_Login.cs</DependentUpon>
     </Compile>
+    <Compile Include="Form_Start.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_Start.Designer.cs">
+      <DependentUpon>Form_Start.cs</DependentUpon>
+    </Compile>
     <Compile Include="Form_Test.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -99,6 +105,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Form_Main.resx">
       <DependentUpon>Form_Main.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_Start.resx">
+      <DependentUpon>Form_Start.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form_Test.resx">
       <DependentUpon>Form_Test.cs</DependentUpon>
@@ -129,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Cursor.ico" />
+    <None Include="Resources\loading.png" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

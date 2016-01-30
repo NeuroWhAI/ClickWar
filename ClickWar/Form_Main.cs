@@ -54,6 +54,7 @@ namespace ClickWar
         //##################################################################################
 
         private bool m_bCanClick = true;
+        protected int m_clickCount = 0, m_prevClickCount = 0;
 
         protected string m_playerName = "";
 
@@ -76,15 +77,20 @@ namespace ClickWar
         {
             while (m_runningThread)
             {
-                while (m_threadWorkList.Count > 0)
+                while (m_threadWorkList.Count > 0 && m_runningThread)
                 {
-                    lock(m_lockObj)
-                    {
-                        m_threadWorkList[0]();
-                        m_threadWorkList.RemoveAt(0);
+                    var job = m_threadWorkList[0];
 
-                        m_bCanClick = true;
+                    job();
+
+
+                    lock (m_lockObj)
+                    {
+                        m_threadWorkList.RemoveAt(0);
                     }
+
+
+                    m_bCanClick = true;
 
 
                     Thread.Sleep(10);
@@ -95,12 +101,21 @@ namespace ClickWar
             }
         }
 
-        protected void AddThreadWork(Action work)
+        protected bool AddThreadWork(Action work)
         {
-            lock (m_lockObj)
+            if (m_threadWorkList.Count < 2)
             {
-                m_threadWorkList.Add(work);
+                lock (m_lockObj)
+                {
+                    m_threadWorkList.Add(work);
+                }
+
+
+                return true;
             }
+            
+
+            return false;
         }
 
         //##################################################################################
@@ -136,6 +151,9 @@ namespace ClickWar
             m_gameMap.WhenTileUnderAttack += m_mapViewer.WhenTileUnderAttack;
             m_gameMap.WhenTileUpgraded += m_mapViewer.WhenTileUpgraded;
 
+            // 폼이 게임 이벤트를 받을 수 있도록 등록.
+            m_gameMap.WhenShutdownMessageChanged += WhenShutdownMessageChanged;
+
 
             m_db.Connect();
 
@@ -165,7 +183,7 @@ namespace ClickWar
 
         private void Form_Main_Paint(object sender, PaintEventArgs e)
         {
-            m_mapViewer.DrawMap(e.Graphics, m_playerName, this.Size);
+            m_mapViewer.DrawMap(e.Graphics, m_playerName, m_clickCount, this.Size);
         }
 
         private void timer_update_Tick(object sender, EventArgs e)
@@ -176,27 +194,52 @@ namespace ClickWar
         private void timer_updateSlower_Tick(object sender, EventArgs e)
         {
             // 동기화
-            AddThreadWork(() => m_gameMap.SyncAll(m_db)); // 비동기 작업
+            Point startIdx = new Point(), endIdx = new Point();
+            m_mapViewer.GetIndexRect(this.Size, ref startIdx, ref endIdx);
+
+            AddThreadWork(() => m_gameMap.SyncAllRect(m_db, startIdx, endIdx)); // 비동기 작업
+
+            if (m_gameMap.ShutdownFlag)
+                Application.Exit();
 
             // UI 갱신
             this.label_playerPower.Text = m_gameMap.GetPlayerPower(m_playerName).ToString();
+
+            // 랭킹 갱신
+            UpdateRank();
         }
 
         //##################################################################################
 
         private void Form_Main_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left && m_bCanClick)
+            if (e.Button == MouseButtons.Left)
             {
-                AddThreadWork(() => m_mapViewer.OnClick(e, m_db, m_playerName, m_powerWayNum)); // 비동기 작업
+                // 클릭 횟수 증가
+                if (m_clickCount < 10)
+                    ++m_clickCount;
 
-                // 다음 갱신까지 클릭이벤트를 받지 않도록 설정.
-                m_bCanClick = false;
-                this.Cursor = Cursors.WaitCursor;
+                if (m_bCanClick)
+                {
+                    // 다음 갱신까지 클릭이벤트를 받지 않도록 설정.
+                    m_bCanClick = false;
 
-                // 자동 동기화 타이머 리셋
-                this.timer_updateSlower.Stop();
-                this.timer_updateSlower.Start();
+                    // 클릭 처리 (비동기)
+                    m_prevClickCount = m_clickCount;
+                    bool bSuccess = AddThreadWork(() => m_mapViewer.OnClick(e, m_prevClickCount, m_db, m_playerName, m_powerWayNum, this.Size));
+
+                    // 클릭처리작업 추가 성공시
+                    if (bSuccess)
+                    {
+                        // 클릭 횟수 초기화
+                        m_clickCount = 0;
+                    }
+                    else
+                    {
+                        // 클릭작업 추가에 실패했으므로 재시도 할 수 있도록 설정.
+                        m_bCanClick = true;
+                    }
+                }
             }
         }
 
@@ -256,6 +299,11 @@ namespace ClickWar
             loginForm.Show();
         }
 
+        private void button_reColor_Click(object sender, EventArgs e)
+        {
+            m_mapViewer.ReColorAll();
+        }
+
         //##################################################################################
 
         private void Form_Main_MouseDown(object sender, MouseEventArgs e)
@@ -304,6 +352,9 @@ namespace ClickWar
 
                 ++index;
             }
+
+            this.label1.Select();
+            this.label1.Focus();
         }
 
         private void button_powerWayHere_Click(object sender, EventArgs e)
@@ -329,6 +380,63 @@ namespace ClickWar
         private void button_powerWayRight_Click(object sender, EventArgs e)
         {
             WhenPowerWayButtonClick(sender);
+        }
+
+        //##################################################################################
+
+        protected void ChangeRankHeight(int delta)
+        {
+            this.groupBox_rank.Size = new Size(this.groupBox_rank.Size.Width,
+                54 + delta);
+
+            this.listBox_rank.Size = new Size(this.listBox_rank.Size.Width,
+                34 + delta);
+        }
+
+        private void listBox_rank_MouseEnter(object sender, EventArgs e)
+        {
+            var delta = this.listBox_rank.Items.Count * 14;
+            if (delta > 256) delta = 256;
+
+            ChangeRankHeight(delta);
+        }
+
+        private void listBox_rank_MouseLeave(object sender, EventArgs e)
+        {
+            ChangeRankHeight(0);
+        }
+
+        //##################################################################################
+
+        private void WhenShutdownMessageChanged(string msg, bool shutdownFlag)
+        {
+            MessageBox.Show(msg, "From server");
+        }
+
+        //##################################################################################
+
+        private void UpdateRank()
+        {
+            this.listBox_rank.BeginUpdate();
+
+
+            this.listBox_rank.Items.Clear();
+
+
+            var rank = m_gameMap.GetRank();
+
+            int index = 0;
+            foreach (var info in rank)
+            {
+                this.listBox_rank.Items.Add(string.Format("{0}: \"{1}\" #{2}",
+                    index + 1, info.Key, info.Value));
+
+
+                ++index;
+            }
+
+
+            this.listBox_rank.EndUpdate();
         }
     }
 }

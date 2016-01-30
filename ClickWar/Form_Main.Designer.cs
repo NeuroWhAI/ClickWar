@@ -43,15 +43,19 @@
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.button_logout = new System.Windows.Forms.Button();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.button_powerWayHere = new System.Windows.Forms.Button();
-            this.button_powerWayUp = new System.Windows.Forms.Button();
-            this.button_powerWayDown = new System.Windows.Forms.Button();
-            this.button_powerWayLeft = new System.Windows.Forms.Button();
             this.button_powerWayRight = new System.Windows.Forms.Button();
+            this.button_powerWayLeft = new System.Windows.Forms.Button();
+            this.button_powerWayDown = new System.Windows.Forms.Button();
+            this.button_powerWayUp = new System.Windows.Forms.Button();
+            this.button_powerWayHere = new System.Windows.Forms.Button();
+            this.button_reColor = new System.Windows.Forms.Button();
+            this.groupBox_rank = new System.Windows.Forms.GroupBox();
+            this.listBox_rank = new System.Windows.Forms.ListBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            this.groupBox_rank.SuspendLayout();
             this.SuspendLayout();
             // 
             // timer_update
@@ -61,7 +65,7 @@
             // 
             // timer_updateSlower
             // 
-            this.timer_updateSlower.Interval = 3000;
+            this.timer_updateSlower.Interval = 2000;
             this.timer_updateSlower.Tick += new System.EventHandler(this.timer_updateSlower_Tick);
             // 
             // groupBox1
@@ -148,10 +152,11 @@
             // 
             // groupBox3
             // 
+            this.groupBox3.Controls.Add(this.button_reColor);
             this.groupBox3.Controls.Add(this.button_logout);
             this.groupBox3.Location = new System.Drawing.Point(339, 12);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(100, 68);
+            this.groupBox3.Size = new System.Drawing.Size(187, 68);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Menu";
@@ -173,12 +178,52 @@
             this.groupBox4.Controls.Add(this.button_powerWayDown);
             this.groupBox4.Controls.Add(this.button_powerWayUp);
             this.groupBox4.Controls.Add(this.button_powerWayHere);
-            this.groupBox4.Location = new System.Drawing.Point(445, 12);
+            this.groupBox4.Location = new System.Drawing.Point(532, 12);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(229, 68);
             this.groupBox4.TabIndex = 3;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Power Way";
+            // 
+            // button_powerWayRight
+            // 
+            this.button_powerWayRight.Location = new System.Drawing.Point(187, 24);
+            this.button_powerWayRight.Name = "button_powerWayRight";
+            this.button_powerWayRight.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayRight.TabIndex = 8;
+            this.button_powerWayRight.Text = "→";
+            this.button_powerWayRight.UseVisualStyleBackColor = true;
+            this.button_powerWayRight.Click += new System.EventHandler(this.button_powerWayRight_Click);
+            // 
+            // button_powerWayLeft
+            // 
+            this.button_powerWayLeft.Location = new System.Drawing.Point(145, 24);
+            this.button_powerWayLeft.Name = "button_powerWayLeft";
+            this.button_powerWayLeft.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayLeft.TabIndex = 7;
+            this.button_powerWayLeft.Text = "←";
+            this.button_powerWayLeft.UseVisualStyleBackColor = true;
+            this.button_powerWayLeft.Click += new System.EventHandler(this.button_powerWayLeft_Click);
+            // 
+            // button_powerWayDown
+            // 
+            this.button_powerWayDown.Location = new System.Drawing.Point(103, 24);
+            this.button_powerWayDown.Name = "button_powerWayDown";
+            this.button_powerWayDown.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayDown.TabIndex = 6;
+            this.button_powerWayDown.Text = "↓";
+            this.button_powerWayDown.UseVisualStyleBackColor = true;
+            this.button_powerWayDown.Click += new System.EventHandler(this.button_powerWayDown_Click);
+            // 
+            // button_powerWayUp
+            // 
+            this.button_powerWayUp.Location = new System.Drawing.Point(61, 24);
+            this.button_powerWayUp.Name = "button_powerWayUp";
+            this.button_powerWayUp.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayUp.TabIndex = 5;
+            this.button_powerWayUp.Text = "↑";
+            this.button_powerWayUp.UseVisualStyleBackColor = true;
+            this.button_powerWayUp.Click += new System.EventHandler(this.button_powerWayUp_Click);
             // 
             // button_powerWayHere
             // 
@@ -191,51 +236,45 @@
             this.button_powerWayHere.UseVisualStyleBackColor = true;
             this.button_powerWayHere.Click += new System.EventHandler(this.button_powerWayHere_Click);
             // 
-            // button_powerWayUp
+            // button_reColor
             // 
-            this.button_powerWayUp.Location = new System.Drawing.Point(61, 24);
-            this.button_powerWayUp.Name = "button_powerWayUp";
-            this.button_powerWayUp.Size = new System.Drawing.Size(36, 36);
-            this.button_powerWayUp.TabIndex = 5;
-            this.button_powerWayUp.Text = "↑";
-            this.button_powerWayUp.UseVisualStyleBackColor = true;
-            this.button_powerWayUp.Click += new System.EventHandler(this.button_powerWayUp_Click);
+            this.button_reColor.Location = new System.Drawing.Point(100, 24);
+            this.button_reColor.Name = "button_reColor";
+            this.button_reColor.Size = new System.Drawing.Size(81, 36);
+            this.button_reColor.TabIndex = 4;
+            this.button_reColor.Text = "ReColor";
+            this.button_reColor.UseVisualStyleBackColor = true;
+            this.button_reColor.Click += new System.EventHandler(this.button_reColor_Click);
             // 
-            // button_powerWayDown
+            // groupBox_rank
             // 
-            this.button_powerWayDown.Location = new System.Drawing.Point(103, 24);
-            this.button_powerWayDown.Name = "button_powerWayDown";
-            this.button_powerWayDown.Size = new System.Drawing.Size(36, 36);
-            this.button_powerWayDown.TabIndex = 6;
-            this.button_powerWayDown.Text = "↓";
-            this.button_powerWayDown.UseVisualStyleBackColor = true;
-            this.button_powerWayDown.Click += new System.EventHandler(this.button_powerWayDown_Click);
+            this.groupBox_rank.Controls.Add(this.listBox_rank);
+            this.groupBox_rank.Location = new System.Drawing.Point(767, 12);
+            this.groupBox_rank.Name = "groupBox_rank";
+            this.groupBox_rank.Size = new System.Drawing.Size(227, 68);
+            this.groupBox_rank.TabIndex = 4;
+            this.groupBox_rank.TabStop = false;
+            this.groupBox_rank.Text = "Rank";
             // 
-            // button_powerWayLeft
+            // listBox_rank
             // 
-            this.button_powerWayLeft.Location = new System.Drawing.Point(145, 24);
-            this.button_powerWayLeft.Name = "button_powerWayLeft";
-            this.button_powerWayLeft.Size = new System.Drawing.Size(36, 36);
-            this.button_powerWayLeft.TabIndex = 7;
-            this.button_powerWayLeft.Text = "←";
-            this.button_powerWayLeft.UseVisualStyleBackColor = true;
-            this.button_powerWayLeft.Click += new System.EventHandler(this.button_powerWayLeft_Click);
-            // 
-            // button_powerWayRight
-            // 
-            this.button_powerWayRight.Location = new System.Drawing.Point(187, 24);
-            this.button_powerWayRight.Name = "button_powerWayRight";
-            this.button_powerWayRight.Size = new System.Drawing.Size(36, 36);
-            this.button_powerWayRight.TabIndex = 8;
-            this.button_powerWayRight.Text = "→";
-            this.button_powerWayRight.UseVisualStyleBackColor = true;
-            this.button_powerWayRight.Click += new System.EventHandler(this.button_powerWayRight_Click);
+            this.listBox_rank.FormattingEnabled = true;
+            this.listBox_rank.ItemHeight = 15;
+            this.listBox_rank.Location = new System.Drawing.Point(6, 24);
+            this.listBox_rank.Name = "listBox_rank";
+            this.listBox_rank.ScrollAlwaysVisible = true;
+            this.listBox_rank.SelectionMode = System.Windows.Forms.SelectionMode.None;
+            this.listBox_rank.Size = new System.Drawing.Size(215, 34);
+            this.listBox_rank.TabIndex = 5;
+            this.listBox_rank.MouseEnter += new System.EventHandler(this.listBox_rank_MouseEnter);
+            this.listBox_rank.MouseLeave += new System.EventHandler(this.listBox_rank_MouseLeave);
             // 
             // Form_Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(782, 653);
+            this.ClientSize = new System.Drawing.Size(1006, 721);
+            this.Controls.Add(this.groupBox_rank);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
@@ -257,6 +296,7 @@
             this.groupBox2.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
+            this.groupBox_rank.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -280,6 +320,9 @@
         private System.Windows.Forms.Button button_powerWayDown;
         private System.Windows.Forms.Button button_powerWayUp;
         private System.Windows.Forms.Button button_powerWayHere;
+        private System.Windows.Forms.Button button_reColor;
+        private System.Windows.Forms.GroupBox groupBox_rank;
+        private System.Windows.Forms.ListBox listBox_rank;
     }
 }
 

@@ -41,10 +41,67 @@ namespace ClickWar.Game
 
         //##################################################################################
 
+        protected string m_prevShutMsg = "";
+
+        public delegate void ShutdownEventDelegate(string msg, bool shutdownFlag);
+        public event ShutdownEventDelegate WhenShutdownMessageChanged;
+
+        public string ShutdownMessage
+        { get; set; } = "";
+
+        public bool ShutdownFlag
+        { get; set; } = false;
+
+        //##################################################################################
+
         public int SyncAll(Util.DBHelper db)
         {
             SyncMapSize(db);
             SyncTile(db);
+            SyncServerMessage(db);
+
+
+            return 0;
+        }
+
+        public int SyncAllRect(Util.DBHelper db, Point startIdx, Point endIdx)
+        {
+            SyncMapSize(db);
+            SyncTileRect(db, startIdx, endIdx);
+            SyncServerMessage(db);
+
+
+            return 0;
+        }
+
+        public int SyncServerMessage(Util.DBHelper db)
+        {
+            var shutdownDoc = db.GetDocument("Server", "Shutdown");
+            if (shutdownDoc == null)
+            {
+                shutdownDoc = db.CreateDocument("Server", "Shutdown",
+                    new BsonDocument()
+                    {
+                        { "Flag", false },
+                        { "Message", "" }
+                    });
+            }
+            else
+            {
+                var flag = shutdownDoc["Flag"].AsBoolean;
+                var msg = shutdownDoc["Message"].AsString;
+
+                this.ShutdownFlag = flag;
+                this.ShutdownMessage = msg;
+
+
+                // 이벤트 발생
+                if (m_prevShutMsg != msg && this.WhenShutdownMessageChanged != null)
+                    this.WhenShutdownMessageChanged(msg, flag);
+
+
+                m_prevShutMsg = msg;
+            }
 
 
             return 0;
@@ -118,35 +175,66 @@ namespace ClickWar.Game
                 var tileArray = tileArrayDoc["List"].AsBsonArray;
 
                 // DB타일의 정보를 인덱스에 해당하는 타일에 설정.
-                int index = 0;
-                foreach (var tileVal in tileArray)
+                for (int index = 0;
+                    index < tileArray.Count && index < m_tileMap.Length;
+                    ++index)
                 {
-                    if (index >= m_tileMap.Length)
-                        break;
-
-                    int h = index % m_tileMap.GetLength(1);
-                    int w = index / m_tileMap.GetLength(1);
-
-                    if (w < m_tileMap.GetLength(0) && h < m_tileMap.GetLength(1))
-                    {
-                        string oldOwner = m_tileMap[w, h].Owner;
-                        int oldPower = m_tileMap[w, h].Power;
-
-                        // 타일 갱신
-                        m_tileMap[w, h].FromBsonDocument(tileVal.AsBsonDocument);
-
-
-                        // 이벤트 발생
-                        if (oldOwner != m_tileMap[w, h].Owner)
-                            WhenTileCaptured(w, h);
-                        if (oldPower > m_tileMap[w, h].Power)
-                            WhenTileUpgraded(w, h);
-                        else if (oldPower < m_tileMap[w, h].Power)
-                            WhenTileUnderAttack(w, h);
-                    }
-
-                    ++index;
+                    SyncTileAt(db, tileArray, index);
                 }
+            }
+
+
+            return 0;
+        }
+
+        public int SyncTileRect(Util.DBHelper db, Point startIdx, Point endIdx)
+        {
+            // 타일의 배열이 존재하는 문서를 얻어옴.
+            var tileArrayDoc = db.GetDocument("Tiles", "Tiles");
+            
+            // 문서가 존재한다면 DB의 타일정보를 받아와 적용시킨다.
+            if (tileArrayDoc != null)
+            {
+                // 문서에서 타일배열을 얻어옴.
+                var tileArray = tileArrayDoc["List"].AsBsonArray;
+
+                // DB타일의 정보를 인덱스에 해당하는 타일에 설정.
+                for (int w = startIdx.X;
+                    w <= endIdx.X && w < m_tileMap.GetLength(0); ++w)
+                {
+                    for (int h = startIdx.Y;
+                        h <= endIdx.Y && h < m_tileMap.GetLength(1); ++h)
+                    {
+                        SyncTileAt(db, tileArray, w * m_tileMap.GetLength(1) + h);
+                    }
+                }
+            }
+
+
+            return 0;
+        }
+
+        protected int SyncTileAt(Util.DBHelper db, BsonArray tileArray, int index)
+        {
+            int h = index % m_tileMap.GetLength(1);
+            int w = index / m_tileMap.GetLength(1);
+
+            if (w < m_tileMap.GetLength(0) && h < m_tileMap.GetLength(1))
+            {
+                string oldOwner = m_tileMap[w, h].Owner;
+                int oldPower = m_tileMap[w, h].Power;
+
+                // 타일 갱신
+                m_tileMap[w, h].FromBsonDocument(tileArray[index].AsBsonDocument);
+
+
+                // 이벤트 발생
+                if (oldOwner != m_tileMap[w, h].Owner)
+                    WhenTileCaptured(w, h);
+                if (oldPower > m_tileMap[w, h].Power)
+                    WhenTileUpgraded(w, h);
+                else if (oldPower < m_tileMap[w, h].Power)
+                    WhenTileUnderAttack(w, h);
             }
 
 
@@ -494,6 +582,49 @@ namespace ClickWar.Game
 
 
             return power;
+        }
+
+        public List<KeyValuePair<string, int>> GetRank()
+        {
+            Dictionary<string, int> power = new Dictionary<string, int>();
+
+            foreach (var tile in m_tileMap)
+            {
+                if (tile.HaveOwner)
+                {
+                    if (power.ContainsKey(tile.Owner))
+                        power[tile.Owner] += tile.Power;
+                    else
+                        power.Add(tile.Owner, tile.Power);
+
+                }
+            }
+
+
+            List<KeyValuePair<string, int>> result = new List<KeyValuePair<string, int>>();
+
+            while (power.Count > 0)
+            {
+                string maxPlayer = power.First().Key;
+                int maxPower = power.First().Value;
+
+                foreach (var info in power)
+                {
+                    if (info.Value > maxPower)
+                    {
+                        maxPower = info.Value;
+                        maxPlayer = info.Key;
+                    }
+                }
+
+
+                result.Add(new KeyValuePair<string, int>(maxPlayer, maxPower));
+
+                power.Remove(maxPlayer);
+            }
+
+
+            return result;
         }
     }
 }

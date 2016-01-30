@@ -37,7 +37,7 @@ namespace ClickWar.Game
         {
             get
             {
-                return (Owner.Length <= 0);
+                return (Owner.Length > 0);
             }
         }
 
