@@ -11,10 +11,11 @@ using System.Threading;
 
 namespace ClickWar
 {
-    public partial class Form_Main : Form
+    public partial class Form_Main : Form, IStringReceiver
     {
         public Form_Main(string playerName)
         {
+            // 더블 버퍼링
             this.SetStyle(ControlStyles.DoubleBuffer, true);
             this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
             this.SetStyle(ControlStyles.UserPaint, true);
@@ -22,9 +23,11 @@ namespace ClickWar
             InitializeComponent();
 
 
+            // 마우스 휠 이벤트 등록
             this.MouseWheel += Form_Main_MouseWheel;
 
 
+            // Power way 버튼들을 목록에 등록
             m_powerWayButtons[0] = this.button_powerWayHere;
             m_powerWayButtons[1] = this.button_powerWayUp;
             m_powerWayButtons[2] = this.button_powerWayRight;
@@ -34,32 +37,34 @@ namespace ClickWar
             WhenPowerWayButtonClick(m_powerWayButtons[0]);
 
 
+            // 컨트롤러에 DB와 게임 모델, 뷰 등록
+            m_gameController.SetDB(m_db);
+            m_gameController.SetGameMap(m_gameMap);
+            m_gameController.SetGameViewer(m_gameViewer);
+
+
+            // 창 이름 설정
             this.Text = "Click War - " + Application.ProductVersion;
 
 
-            m_playerName = playerName;
+            // 플레이어 이름 등록
+            m_gameController.SetPlayerName(playerName);
             this.label_playerName.Text = string.Format("\"{0}\"", playerName);
         }
 
         //##################################################################################
 
         protected Button[] m_powerWayButtons = new Button[5];
-        protected int m_powerWayNum = 0;
 
         //##################################################################################
 
         protected Util.DBHelper m_db = new Util.DBHelper();
 
-        protected Game.GameMap m_gameMap = null;
+        protected Game.GameMap m_gameMap = new Game.GameMap();
 
-        protected View.MapViewer m_mapViewer = new View.MapViewer();
+        protected View.GameViewer m_gameViewer = new View.GameViewer();
 
-        //##################################################################################
-
-        private bool m_bCanClick = true;
-        protected int m_clickCount = 0, m_prevClickCount = 0;
-
-        protected string m_playerName = "";
+        protected Controller.GameController m_gameController = new Controller.GameController();
 
         //##################################################################################
 
@@ -71,15 +76,16 @@ namespace ClickWar
 
         //##################################################################################
 
-        protected bool m_bMoveCam = false;
-        protected Point m_prevCursor;
-
-        //##################################################################################
-
         protected void ThreadJob()
         {
             while (m_runningThread)
             {
+#if DEBUG
+                System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+                timer.Start();
+#endif
+
+
                 int workCount = m_threadWorkList.Count;
 
                 for (int i = 0; i < workCount; ++i)
@@ -90,7 +96,19 @@ namespace ClickWar
 
                     var job = m_threadWorkList[i];
 
+
+#if DEBUG
+                    System.Diagnostics.Stopwatch jobTimer = new System.Diagnostics.Stopwatch();
+                    jobTimer.Start();
+#endif
+
+
                     job();
+
+
+#if DEBUG
+                    System.Diagnostics.Debug.WriteLine(string.Format("Job{0}: {1}s", i,(double)jobTimer.ElapsedMilliseconds / 1000.0));
+#endif
 
 
                     lock (m_lockObj)
@@ -101,6 +119,12 @@ namespace ClickWar
 
                     Thread.Sleep(10);
                 }
+
+
+#if DEBUG
+                if(timer.ElapsedMilliseconds > 0)
+                    System.Diagnostics.Debug.WriteLine(string.Format("{0}s", (double)timer.ElapsedMilliseconds / 1000.0));
+#endif
 
 
                 Thread.Sleep(32);
@@ -137,13 +161,10 @@ namespace ClickWar
 
         public void ResetGame(string playerName)
         {
-            m_playerName = playerName;
             this.label_playerName.Text = string.Format("\"{0}\"", playerName);
 
 
-            m_gameMap.SyncAll(m_db);
-
-            m_mapViewer.TileSize = 48;
+            m_gameController.ResetGame(playerName, this.Size);
 
 
             this.timer_update.Start();
@@ -158,26 +179,13 @@ namespace ClickWar
             m_gameThread.Start();
 
 
-            m_gameMap = new Game.GameMap();
-
-
-            // 뷰가 게임 이벤트를 받을 수 있도록 등록.
-            m_gameMap.WhenTileCaptured += m_mapViewer.WhenTileCaptured;
-            m_gameMap.WhenTileUnderAttack += m_mapViewer.WhenTileUnderAttack;
-            m_gameMap.WhenTileUpgraded += m_mapViewer.WhenTileUpgraded;
-
             // 폼이 게임 이벤트를 받을 수 있도록 등록.
             m_gameMap.WhenShutdownMessageChanged += WhenShutdownMessageChanged;
 
 
             m_db.Connect();
 
-            m_mapViewer.GameMap = m_gameMap;
-            m_mapViewer.Location = new Point(12, 76);
-            m_mapViewer.TileSize = 48;
-
-
-            m_gameMap.SyncAll(m_db);
+            m_gameController.Init(this.Size);
 
 
             this.timer_update.Start();
@@ -204,7 +212,7 @@ namespace ClickWar
 
         private void Form_Main_Paint(object sender, PaintEventArgs e)
         {
-            m_mapViewer.DrawMap(e.Graphics, m_playerName, m_clickCount, this.Size);
+            m_gameController.DrawGame(e.Graphics, this.Size);
         }
 
         private void timer_update_Tick(object sender, EventArgs e)
@@ -215,13 +223,13 @@ namespace ClickWar
         private void timer_updateSlower_Tick(object sender, EventArgs e)
         {
             // 동기화
-            AddThreadWork(() => m_gameMap.SyncAll(m_db), 0); // 비동기 작업
+            AddThreadWork(() => m_gameController.SyncGame(this.Size), 2); // 비동기 작업
 
             if (m_gameMap.ShutdownFlag)
                 Application.Exit();
 
             // UI 갱신
-            this.label_playerPower.Text = m_gameMap.GetPlayerPower(m_playerName).ToString();
+            this.label_playerPower.Text = m_gameController.GetPlayerPower().ToString();
 
             // 랭킹 갱신
             UpdateRank();
@@ -233,95 +241,128 @@ namespace ClickWar
         {
             if (e.Button == MouseButtons.Left)
             {
-                // 클릭 횟수 증가
-                if (m_clickCount < 10)
-                    ++m_clickCount;
-
-                if (m_bCanClick)
-                {
-                    // 다음 갱신까지 클릭이벤트를 받지 않도록 설정.
-                    m_bCanClick = false;
-
-                    // 클릭 처리 (비동기)
-                    m_prevClickCount = m_clickCount;
-                    bool bSuccess = AddThreadWork(() => {
-                        m_mapViewer.OnClick(e, m_prevClickCount, m_db, m_playerName, m_powerWayNum, this.Size);
-                        m_bCanClick = true;
-                    }, 1);
-
-                    // 클릭처리작업 추가 성공시
-                    if (bSuccess)
-                    {
-                        // 클릭 횟수 초기화
-                        m_clickCount = 0;
-                    }
-                    else
-                    {
-                        // 클릭작업 추가에 실패했으므로 재시도 할 수 있도록 설정.
-                        m_bCanClick = true;
-                    }
-                }
+                // 비동기 작업
+                m_gameController.WhenLeftClick(this.AddThreadWork, 0,
+                    e.Location, this.Size);
+            }
+            else if (e.Button == MouseButtons.Middle)
+            {
+                ReadSignInput();
             }
         }
 
         private void Form_Main_MouseMove(object sender, MouseEventArgs e)
         {
-            if (m_bMoveCam)
-            {
-                m_mapViewer.Location = new Point(m_mapViewer.Location.X + e.X - m_prevCursor.X,
-                    m_mapViewer.Location.Y + e.Y - m_prevCursor.Y);
+            // 메인 포커스를 폼으로 하기위한 조치
+            this.label1.Select();
+            this.label1.Focus();
 
-                m_prevCursor = e.Location;
-            }
 
-            m_mapViewer.OnMove(e, m_db, m_playerName);
+            m_gameController.WhenMouseMove(e.Location);
         }
 
         //##################################################################################
 
-        protected void ViewScaleChange(int delta)
+        private void Form_Main_KeyDown(object sender, KeyEventArgs e)
         {
-            if (delta < 0)
+            switch (e.KeyCode)
             {
-                if (m_mapViewer.TileSize > -delta + 1)
-                {
-                    m_mapViewer.TileSize += delta;
-                }
-            }
-            else
-            {
-                if (m_mapViewer.TileSize < 256)
-                {
-                    m_mapViewer.TileSize += delta;
-                }
-            }
+                case Keys.Space:
+                    WhenPowerWayButtonClick(m_powerWayButtons[0]);
+                    break;
 
-            // 확대/축소에 따라 화면도 보던 곳을 추적.
-            int camMoveX = delta * (m_mapViewer.Location.X - this.Size.Width / 2) / m_mapViewer.TileSize;
-            int camMoveY = delta * (m_mapViewer.Location.Y - this.Size.Height / 2) / m_mapViewer.TileSize;
+                case Keys.W:
+                    WhenPowerWayButtonClick(m_powerWayButtons[1]);
+                    break;
 
-            m_mapViewer.Location = new Point(m_mapViewer.Location.X + camMoveX, m_mapViewer.Location.Y + camMoveY);
+                case Keys.D:
+                    WhenPowerWayButtonClick(m_powerWayButtons[2]);
+                    break;
+
+                case Keys.S:
+                    WhenPowerWayButtonClick(m_powerWayButtons[3]);
+                    break;
+
+                case Keys.A:
+                    WhenPowerWayButtonClick(m_powerWayButtons[4]);
+                    break;
+
+                case Keys.Oemplus:
+                    m_gameController.ChangeViewScale(4, this.Size);
+                    break;
+
+                case Keys.OemMinus:
+                    m_gameController.ChangeViewScale(-4, this.Size);
+                    break;
+
+                case Keys.Enter:
+                    ReadSignInput();
+                    break;
+
+                case Keys.Delete:
+                    RemoveSign();
+                    break;
+            }
         }
+
+        //##################################################################################
+
+        protected void ReadSignInput()
+        {
+            int x, y;
+            m_gameController.GetFocusedLocation(out x, out y);
+
+            var tile = m_gameMap.GetTileAt(x, y);
+            if (tile != null
+                &&
+                m_gameController.IsPlayerTerritory(x, y))
+            {
+                Form_Sign inputForm = new Form_Sign(this, x, y);
+                inputForm.SetInputText(tile.Sign);
+                inputForm.ShowDialog();
+            }
+        }
+
+        protected void RemoveSign()
+        {
+            int x, y;
+            m_gameController.GetFocusedLocation(out x, out y);
+
+            var tile = m_gameMap.GetTileAt(x, y);
+            if (tile != null
+                &&
+                m_gameController.IsPlayerTerritory(x, y))
+            {
+                AddThreadWork(() => m_gameController.SetSignAt("", x, y), 1);
+            }
+        }
+
+        public void WhenReceiveSignInfo(string text, int tileX, int tileY)
+        {
+            AddThreadWork(() => m_gameController.SetSignAt(text, tileX, tileY), 1);
+        }
+
+        //##################################################################################
 
         private void button_scaleUp_Click(object sender, EventArgs e)
         {
-            ViewScaleChange(4);
+            m_gameController.ChangeViewScale(4, this.Size);
         }
 
         private void button_scaleDown_Click(object sender, EventArgs e)
         {
-            ViewScaleChange(-4);
+            m_gameController.ChangeViewScale(-4, this.Size);
         }
 
         private void Form_Main_MouseWheel(object sender, MouseEventArgs e)
         {
             if (e.Delta < 0)
             {
-                ViewScaleChange(-4);
+                m_gameController.WhenMouseWheelRollDown(this.Size);
             }
             else if(e.Delta > 0)
             {
-                ViewScaleChange(4);
+                m_gameController.WhenMouseWheelRollUp(this.Size);
             }
         }
 
@@ -332,6 +373,10 @@ namespace ClickWar
             // 갱신 정지
             this.timer_update.Stop();
             this.timer_updateSlower.Stop();
+
+
+            // 채팅창 숨기기
+            this.HideChatForm();
 
 
             // 로그인 화면 보여주기.
@@ -352,7 +397,49 @@ namespace ClickWar
 
         private void button_reColor_Click(object sender, EventArgs e)
         {
-            m_mapViewer.ReColorAll();
+            m_gameController.ReColorAll();
+        }
+
+        private void button_chat_Click(object sender, EventArgs e)
+        {
+            ShowChatForm();
+        }
+
+        //##################################################################################
+
+        protected void ShowChatForm()
+        {
+            Form chatForm = null;
+
+            // 채팅 화면 보여주기.
+            foreach (Form form in Application.OpenForms)
+            {
+                if (form is Form_Chat)
+                {
+                    chatForm = form;
+
+                    break;
+                }
+            }
+
+            if (chatForm == null)
+                chatForm = new Form_Chat();
+            chatForm.Show();
+            chatForm.Location = new Point(this.Location.X + this.DisplayRectangle.Width + 2, this.Location.Y);
+        }
+
+        protected void HideChatForm()
+        {
+            // 채팅 화면 숨기기.
+            foreach (Form form in Application.OpenForms)
+            {
+                if (form is Form_Chat)
+                {
+                    form.Hide();
+
+                    return;
+                }
+            }
         }
 
         //##################################################################################
@@ -361,21 +448,19 @@ namespace ClickWar
         {
             if (e.Button == MouseButtons.Right)
             {
-                m_bMoveCam = true;
-
-                m_prevCursor = e.Location;
+                m_gameController.WhenRightDown(e.Location);
             }
         }
 
         private void Form_Main_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
-                m_bMoveCam = false;
+                m_gameController.WhenRightUp(e.Location);
         }
 
         private void Form_Main_MouseLeave(object sender, EventArgs e)
         {
-            m_bMoveCam = false;
+            m_gameController.WhenRightUp(new Point(-1, -1));
         }
 
         //##################################################################################
@@ -392,7 +477,7 @@ namespace ClickWar
 
                     btn.BackColor = Color.Aqua;
 
-                    m_powerWayNum = index;
+                    m_gameController.SetPowerWay(index);
                 }
                 else
                 {
@@ -455,6 +540,9 @@ namespace ClickWar
         private void listBox_rank_MouseLeave(object sender, EventArgs e)
         {
             ChangeRankHeight(0);
+
+            this.Focus();
+            this.Select();
         }
 
         //##################################################################################

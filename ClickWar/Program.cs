@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace ClickWar
 {
@@ -14,9 +15,23 @@ namespace ClickWar
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form_Start());
+            bool bSuccess;
+            string mutexName = "ClickWar_Mutex_Prevent_Multiple";
+            Mutex mutex = new Mutex(true, mutexName, out bSuccess);
+
+            if (bSuccess)
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new Form_Start());
+
+                mutex.ReleaseMutex();
+            }
+            else
+            {
+                MessageBox.Show("프로그램이 이미 실행 중입니다.", "Error!",
+                    MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            }
         }
     }
 }

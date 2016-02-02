@@ -34,7 +34,7 @@ namespace ClickWar.Game
 
         //##################################################################################
 
-        public delegate void GameEventDelegate(int x, int y);
+        public delegate void GameEventDelegate(int x, int y, GameTile tile);
         public event GameEventDelegate WhenTileUnderAttack; // 타일이 공격받고 있을때
         public event GameEventDelegate WhenTileCaptured; // 타일이 점령되었을때
         public event GameEventDelegate WhenTileUpgraded; // 타일의 힘이 강해졌을때
@@ -129,8 +129,7 @@ namespace ClickWar.Game
                 ||
                 width != m_tileMap.GetLength(0) || height != m_tileMap.GetLength(1))
             {
-                if (m_tileMap == null)
-                    m_tileMap = new GameTile[width, height];
+                m_tileMap = new GameTile[width, height];
 
                 for (int w = 0; w < width; ++w)
                 {
@@ -173,7 +172,7 @@ namespace ClickWar.Game
             {
                 // 문서에서 타일배열을 얻어옴.
                 var tileArray = tileArrayDoc["List"].AsBsonArray;
-
+                
                 // DB타일의 정보를 인덱스에 해당하는 타일에 설정.
                 for (int index = 0;
                     index < tileArray.Count && index < m_tileMap.Length;
@@ -230,11 +229,12 @@ namespace ClickWar.Game
 
                 // 이벤트 발생
                 if (oldOwner != m_tileMap[w, h].Owner)
-                    WhenTileCaptured(w, h);
-                if (oldPower > m_tileMap[w, h].Power)
-                    WhenTileUpgraded(w, h);
-                else if (oldPower < m_tileMap[w, h].Power)
-                    WhenTileUnderAttack(w, h);
+                    WhenTileCaptured(w, h, m_tileMap[w, h]);
+
+                if (oldPower < m_tileMap[w, h].Power)
+                    WhenTileUpgraded(w, h, m_tileMap[w, h]);
+                else if (oldPower > m_tileMap[w, h].Power)
+                    WhenTileUnderAttack(w, h, m_tileMap[w, h]);
             }
 
 
@@ -275,33 +275,13 @@ namespace ClickWar.Game
             }
 
 
-            BsonDocument tileArrayDoc;
-            BsonArray tileArray;
-            int index = GetDBTileAt(db, tileWidthIndex, tileHeightIndex,
-                out tileArrayDoc, out tileArray);
-
-            // 타일배열 문서가 존재한다면
-            if (tileArrayDoc != null && tileArray != null)
-            {
-                // 타일배열 크기 갱신
-                while (index >= tileArray.Count)
+            // 동기화
+            db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
+                new List<KeyValuePair<int, BsonValue>>()
                 {
-                    var newTile = new GameTile();
-                    newTile.Index = index;
-                    tileArray.Add(newTile.ToBsonDocument());
-                }
-
-                // 타일 내용 갱신.
-                tileArray[index] = m_tileMap[tileWidthIndex, tileHeightIndex].ToBsonDocument();
-
-                // 동기화
-                //db.UpdateDocument("Tiles", "Tiles", tileArrayDoc);
-                db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
-                    new List<KeyValuePair<int, BsonValue>>()
-                    {
-                        new KeyValuePair<int, BsonValue>(index, tileArray[index])
-                    });
-            }
+                    new KeyValuePair<int, BsonValue>(tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+                    m_tileMap[tileWidthIndex, tileHeightIndex].ToBsonDocument())
+                });
 
 
             return 0;
@@ -309,48 +289,28 @@ namespace ClickWar.Game
 
         protected int UploadTileForeach(Util.DBHelper db, System.Drawing.Point[] indexList)
         {
-            BsonDocument tileArrayDoc;
-            BsonArray tileArray;
-            GetDBTileAt(db, -1, -1,
-                out tileArrayDoc, out tileArray);
+            List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate = new List<KeyValuePair<int, BsonValue>>();
 
-            if (tileArrayDoc != null && tileArray != null)
+            foreach (var location in indexList)
             {
-                List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate = new List<KeyValuePair<int, BsonValue>>();
-
-                foreach (var location in indexList)
+                // 타일맵 범위 초과시 아무것도 안함.
+                if (location.X < 0 || location.X >= m_tileMap.GetLength(0)
+                    ||
+                    location.Y < 0 || location.Y >= m_tileMap.GetLength(1))
                 {
-                    // 타일맵 범위 초과시 아무것도 안함.
-                    if (location.X < 0 || location.X >= m_tileMap.GetLength(0)
-                        ||
-                        location.Y < 0 || location.Y >= m_tileMap.GetLength(1))
-                    {
-                        continue;
-                    }
-
-
-                    int index = location.X * m_tileMap.GetLength(1) + location.Y;
-
-                    // 타일배열 크기 갱신
-                    while (index >= tileArray.Count)
-                    {
-                        var newTile = new GameTile();
-                        newTile.Index = index;
-                        tileArray.Add(newTile.ToBsonDocument());
-                    }
-
-                    // 타일 내용 갱신.
-                    tileArray[index] = m_tileMap[location.X, location.Y].ToBsonDocument();
-
-
-                    indexItemListNeedUpdate.Add(new KeyValuePair<int, BsonValue>(index, tileArray[index]));
+                    continue;
                 }
 
-                // 동기화
-                //db.UpdateDocument("Tiles", "Tiles", tileArrayDoc);
-                db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
-                    indexItemListNeedUpdate);
+
+                int index = location.X * m_tileMap.GetLength(1) + location.Y;
+
+                indexItemListNeedUpdate.Add(new KeyValuePair<int, BsonValue>(index,
+                    m_tileMap[location.X, location.Y].ToBsonDocument()));
             }
+
+            // 동기화
+            db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
+                indexItemListNeedUpdate);
 
 
             return 0;
@@ -378,38 +338,14 @@ namespace ClickWar.Game
             // 이벤트 발생
             if (delta > 0)
             {
-                WhenTileUpgraded(tileWidthIndex, tileHeightIndex);
+                WhenTileUpgraded(tileWidthIndex, tileHeightIndex,
+                    this.GetTileAt(tileWidthIndex, tileHeightIndex));
             }
             else if (delta < 0)
             {
-                WhenTileUnderAttack(tileWidthIndex, tileHeightIndex);
+                WhenTileUnderAttack(tileWidthIndex, tileHeightIndex,
+                    this.GetTileAt(tileWidthIndex, tileHeightIndex));
             }
-
-
-            return 0;
-        }
-
-        public int SetOwnerAt(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex, string name)
-        {
-            // 타일맵 범위 초과시 아무것도 안함.
-            if (tileWidthIndex < 0 || tileWidthIndex >= m_tileMap.GetLength(0)
-                ||
-                tileHeightIndex < 0 || tileHeightIndex >= m_tileMap.GetLength(1))
-            {
-                return -1;
-            }
-
-
-            // 이벤트 발생
-            if (name != m_tileMap[tileWidthIndex, tileHeightIndex].Owner)
-                WhenTileCaptured(tileWidthIndex, tileHeightIndex);
-
-
-            // Owner 설정
-            m_tileMap[tileWidthIndex, tileHeightIndex].Owner = name;
-
-            // 동기화
-            UploadTileAt(db, tileWidthIndex, tileHeightIndex);
 
 
             return 0;
@@ -459,9 +395,9 @@ namespace ClickWar.Game
 
             // 이벤트 발생
             if (attackPower > 0)
-                WhenTileUnderAttack(tileWidthIndex, tileHeightIndex);
+                WhenTileUnderAttack(tileWidthIndex, tileHeightIndex, tile);
             else if (attackPower < 0)
-                WhenTileUpgraded(tileWidthIndex, tileHeightIndex);
+                WhenTileUpgraded(tileWidthIndex, tileHeightIndex, tile);
 
 
             // 공격에 사용된 타일의 힘 감소
@@ -483,12 +419,13 @@ namespace ClickWar.Game
                 // 점령
                 tile.Owner = playerName;
                 tile.Power = Math.Abs(tile.Power) + 2;
+                tile.Sign = "";
 
                 bBuild = true;
 
 
                 // 이벤트 발생
-                WhenTileCaptured(tileWidthIndex, tileHeightIndex);
+                WhenTileCaptured(tileWidthIndex, tileHeightIndex, tile);
             }
 
             // 변경사항 업로드
@@ -549,7 +486,47 @@ namespace ClickWar.Game
                         new Point(dirX[dirNum], dirY[dirNum]),
                         new Point(tileWidthIndex, tileHeightIndex),
                     });
+
+
+                    // 이벤트 발생
+                    WhenTileUpgraded(dirX[dirNum], dirY[dirNum], targetTile);
                 }
+            }
+        }
+
+        public void BuildCountry(Util.DBHelper db, int widthIndex, int heightIndex, string playerName,
+            int buildCost)
+        {
+            var tile = this.GetTileAt(widthIndex, heightIndex);
+            if (tile != null)
+            {
+                // 주인없는 땅이면 즉시 건국하고
+                // 있으면 buildCost보다 낮은 땅일시 그만큼 소모하고 건국
+                if (tile.Power < buildCost)
+                {
+                    tile.Owner = playerName;
+                    tile.Power = buildCost - tile.Power;
+
+                    this.UploadTileAt(db, widthIndex, heightIndex);
+
+
+                    // 이벤트 발생
+                    WhenTileCaptured(widthIndex, heightIndex, tile);
+                }
+            }
+        }
+
+        public void BuildSignToTile(Util.DBHelper db, int widthIndex, int heightIndex,
+            string sign, string playerName)
+        {
+            var tile = this.GetTileAt(widthIndex, heightIndex);
+            if (tile != null
+                &&
+                tile.Owner == playerName)
+            {
+                tile.Sign = sign;
+
+                this.UploadTileAt(db, widthIndex, heightIndex);
             }
         }
 
@@ -625,6 +602,33 @@ namespace ClickWar.Game
 
 
             return result;
+        }
+
+        public void GetPlayerLocation(string playerName, out int widthIndex, out int heightIndex)
+        {
+            widthIndex = -1;
+            heightIndex = -1;
+
+
+            int maxPower = -42;
+
+            for (int w = 0; w < m_tileMap.GetLength(0); ++w)
+            {
+                for (int h = 0; h < m_tileMap.GetLength(1); ++h)
+                {
+                    var tile = this.GetTileAt(w, h);
+
+                    if (tile != null && tile.Owner == playerName
+                        &&
+                        tile.Power > maxPower)
+                    {
+                        maxPower = tile.Power;
+
+                        widthIndex = w;
+                        heightIndex = h;
+                    }
+                }
+            }
         }
     }
 }

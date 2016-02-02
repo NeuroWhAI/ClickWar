@@ -7,6 +7,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core;
 using MongoDB.Driver.Builders;
+using System.Threading;
 
 namespace ClickWar.Util
 {
@@ -14,24 +15,11 @@ namespace ClickWar.Util
     {
         public DBHelper()
         {
-            string key = Properties.Resources.ShieldInfo;
-
-            // 키 반전
-            var keyBytes = key.ToCharArray();
-            Array.Reverse(keyBytes);
-            key = new string(keyBytes);
-
-            // 암호 복호화
-            m_dbURI = EncoderDecoder.Decode("ee5I9DdM8/y/jNaPsKAojoB4k83aGvwUWUY6ksQe2Oap86cb17PE6rufJxXHPD1OOCTP56t4AbL0g3XSdCRM+w==",
-                Enumerable.Range(0, key.Length)
-                     .Where(x => x % 2 == 0)
-                     .Select(x => Convert.ToByte(key.Substring(x, 2), 16))
-                     .ToArray());
+            
         }
 
         //##################################################################################
-
-        protected readonly string m_dbURI = "";
+        
         protected MongoClient m_client = null;
         protected IMongoDatabase m_db = null;
 
@@ -48,7 +36,21 @@ namespace ClickWar.Util
 
         public int Connect()
         {
-            m_client = new MongoClient(m_dbURI);
+            string key = Properties.Resources.ShieldInfo;
+
+            // 키 반전
+            var keyBytes = key.ToCharArray();
+            Array.Reverse(keyBytes);
+            key = new string(keyBytes);
+
+            // 암호 복호화
+            string dbURI = EncoderDecoder.Decode("ee5I9DdM8/y/jNaPsKAojoB4k83aGvwUWUY6ksQe2Oap86cb17PE6rufJxXHPD1OOCTP56t4AbL0g3XSdCRM+w==",
+                Enumerable.Range(0, key.Length)
+                .Where(x => x % 2 == 0)
+                .Select(x => Convert.ToByte(key.Substring(x, 2), 16))
+                .ToArray());
+
+            m_client = new MongoClient(dbURI);
             m_db = m_client.GetDatabase("click_war");
 
 
@@ -126,11 +128,33 @@ namespace ClickWar.Util
             var col = this.GetCollection(collectionName);
 
             var filter = Builders<BsonDocument>.Filter.Exists(documentName);
-            var docs = col.Find(filter).ToList();
 
-            if (docs.Count > 0)
+            // 네트워크 오류가 나면 여러번 다시 시도 해본뒤 그래도 안되면 null 반환
+            for (int retryCount = 0; retryCount < 3; ++retryCount)
             {
-                return docs[0];
+                try
+                {
+                    var docs = col.Find(filter).ToList();
+
+                    if (docs.Count > 0)
+                    {
+                        return docs[0];
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                catch (MongoConnectionException)
+                {
+                    Thread.Sleep(1000);
+                    continue;
+                }
+                catch (TimeoutException)
+                {
+                    Thread.Sleep(1000);
+                    continue;
+                }
             }
 
 
@@ -149,6 +173,8 @@ namespace ClickWar.Util
         {
             var col = this.GetCollection(collectionName);
 
+            newDoc.Add(new BsonElement(documentName, ""));
+
             var filter = Builders<BsonDocument>.Filter.Exists(documentName);
             col.ReplaceOne(filter, newDoc);
         }
@@ -158,13 +184,24 @@ namespace ClickWar.Util
         {
             var col = this.GetCollection(collectionName);
 
+            //List<Task> m_updateTaskList = new List<Task>();
+
             foreach (var itemInfo in indexItemListNeedUpdate)
             {
                 var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, itemInfo.Key);
                 var update = Builders<BsonDocument>.Update.Set(arrayProperty + "." + itemInfo.Key, itemInfo.Value);
 
-                col.UpdateOne(filter, update);
+                var task = new Task(() => col.UpdateOne(filter, update));
+                task.Start();
+                //m_updateTaskList.Add(task);
+
+                //col.UpdateOne(filter, update);
             }
+
+            /*foreach (var task in m_updateTaskList)
+            {
+                task.Wait();
+            }*/
         }
     }
 }

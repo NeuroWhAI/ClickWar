@@ -16,13 +16,21 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        protected Point m_circlePos;
+        protected Point m_circlePos = new Point(0, 0);
         protected float m_circleSize = -1.0f;
 
         protected float m_endSize = 128.0f;
         protected float m_scaleSpeed = 10.0f;
 
         protected Color m_color;
+
+        //##################################################################################
+
+        public void AddLocation(int deltaX, int deltaY)
+        {
+            m_circlePos.X += deltaX;
+            m_circlePos.Y += deltaY;
+        }
 
         //##################################################################################
 

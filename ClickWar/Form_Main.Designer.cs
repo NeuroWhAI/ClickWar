@@ -41,6 +41,8 @@
             this.label_playerName = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.button_chat = new System.Windows.Forms.Button();
+            this.button_reColor = new System.Windows.Forms.Button();
             this.button_logout = new System.Windows.Forms.Button();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.button_powerWayRight = new System.Windows.Forms.Button();
@@ -48,7 +50,6 @@
             this.button_powerWayDown = new System.Windows.Forms.Button();
             this.button_powerWayUp = new System.Windows.Forms.Button();
             this.button_powerWayHere = new System.Windows.Forms.Button();
-            this.button_reColor = new System.Windows.Forms.Button();
             this.groupBox_rank = new System.Windows.Forms.GroupBox();
             this.listBox_rank = new System.Windows.Forms.ListBox();
             this.groupBox1.SuspendLayout();
@@ -152,14 +153,35 @@
             // 
             // groupBox3
             // 
+            this.groupBox3.Controls.Add(this.button_chat);
             this.groupBox3.Controls.Add(this.button_reColor);
             this.groupBox3.Controls.Add(this.button_logout);
-            this.groupBox3.Location = new System.Drawing.Point(339, 12);
+            this.groupBox3.Location = new System.Drawing.Point(807, 12);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(187, 68);
+            this.groupBox3.Size = new System.Drawing.Size(264, 68);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Menu";
+            // 
+            // button_chat
+            // 
+            this.button_chat.Location = new System.Drawing.Point(208, 24);
+            this.button_chat.Name = "button_chat";
+            this.button_chat.Size = new System.Drawing.Size(50, 34);
+            this.button_chat.TabIndex = 5;
+            this.button_chat.Text = "Chat";
+            this.button_chat.UseVisualStyleBackColor = true;
+            this.button_chat.Click += new System.EventHandler(this.button_chat_Click);
+            // 
+            // button_reColor
+            // 
+            this.button_reColor.Location = new System.Drawing.Point(100, 24);
+            this.button_reColor.Name = "button_reColor";
+            this.button_reColor.Size = new System.Drawing.Size(81, 36);
+            this.button_reColor.TabIndex = 4;
+            this.button_reColor.Text = "ReColor";
+            this.button_reColor.UseVisualStyleBackColor = true;
+            this.button_reColor.Click += new System.EventHandler(this.button_reColor_Click);
             // 
             // button_logout
             // 
@@ -178,7 +200,7 @@
             this.groupBox4.Controls.Add(this.button_powerWayDown);
             this.groupBox4.Controls.Add(this.button_powerWayUp);
             this.groupBox4.Controls.Add(this.button_powerWayHere);
-            this.groupBox4.Location = new System.Drawing.Point(532, 12);
+            this.groupBox4.Location = new System.Drawing.Point(339, 12);
             this.groupBox4.Name = "groupBox4";
             this.groupBox4.Size = new System.Drawing.Size(229, 68);
             this.groupBox4.TabIndex = 3;
@@ -236,20 +258,10 @@
             this.button_powerWayHere.UseVisualStyleBackColor = true;
             this.button_powerWayHere.Click += new System.EventHandler(this.button_powerWayHere_Click);
             // 
-            // button_reColor
-            // 
-            this.button_reColor.Location = new System.Drawing.Point(100, 24);
-            this.button_reColor.Name = "button_reColor";
-            this.button_reColor.Size = new System.Drawing.Size(81, 36);
-            this.button_reColor.TabIndex = 4;
-            this.button_reColor.Text = "ReColor";
-            this.button_reColor.UseVisualStyleBackColor = true;
-            this.button_reColor.Click += new System.EventHandler(this.button_reColor_Click);
-            // 
             // groupBox_rank
             // 
             this.groupBox_rank.Controls.Add(this.listBox_rank);
-            this.groupBox_rank.Location = new System.Drawing.Point(767, 12);
+            this.groupBox_rank.Location = new System.Drawing.Point(574, 12);
             this.groupBox_rank.Name = "groupBox_rank";
             this.groupBox_rank.Size = new System.Drawing.Size(227, 68);
             this.groupBox_rank.TabIndex = 4;
@@ -273,19 +285,21 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1006, 721);
+            this.ClientSize = new System.Drawing.Size(1083, 721);
             this.Controls.Add(this.groupBox_rank);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.Name = "Form_Main";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Click War";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form_Main_FormClosing);
             this.Load += new System.EventHandler(this.Form_Main_Load);
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Form_Main_Paint);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form_Main_KeyDown);
             this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.Form_Main_MouseClick);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form_Main_MouseDown);
             this.MouseLeave += new System.EventHandler(this.Form_Main_MouseLeave);
@@ -323,6 +337,7 @@
         private System.Windows.Forms.Button button_reColor;
         private System.Windows.Forms.GroupBox groupBox_rank;
         private System.Windows.Forms.ListBox listBox_rank;
+        private System.Windows.Forms.Button button_chat;
     }
 }
 

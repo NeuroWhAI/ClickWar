@@ -66,11 +66,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controller\GameController.cs" />
+    <Compile Include="Form_Chat.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_Chat.Designer.cs">
+      <DependentUpon>Form_Chat.cs</DependentUpon>
+    </Compile>
     <Compile Include="Form_Login.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Form_Login.Designer.cs">
       <DependentUpon>Form_Login.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form_Sign.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_Sign.Designer.cs">
+      <DependentUpon>Form_Sign.cs</DependentUpon>
     </Compile>
     <Compile Include="Form_Start.cs">
       <SubType>Form</SubType>
@@ -86,6 +99,7 @@
     </Compile>
     <Compile Include="Game\GameMap.cs" />
     <Compile Include="Game\GameTile.cs" />
+    <Compile Include="IStringReceiver.cs" />
     <Compile Include="Util\DBHelper.cs" />
     <Compile Include="Form_Main.cs">
       <SubType>Form</SubType>
@@ -99,12 +113,19 @@
     <Compile Include="Util\RegistryHelper.cs" />
     <Compile Include="Util\Utility.cs" />
     <Compile Include="View\CircleEffect.cs" />
-    <Compile Include="View\MapViewer.cs" />
+    <Compile Include="View\GameEventViewer.cs" />
+    <Compile Include="View\GameViewer.cs" />
+    <EmbeddedResource Include="Form_Chat.resx">
+      <DependentUpon>Form_Chat.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form_Login.resx">
       <DependentUpon>Form_Login.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form_Main.resx">
       <DependentUpon>Form_Main.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_Sign.resx">
+      <DependentUpon>Form_Sign.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form_Start.resx">
       <DependentUpon>Form_Start.cs</DependentUpon>
