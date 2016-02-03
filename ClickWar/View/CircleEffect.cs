@@ -50,7 +50,7 @@ namespace ClickWar.View
             m_color = color;
         }
 
-        public void Draw(Graphics g)
+        public void Draw(Graphics g, float scale)
         {
             // 클릭효과 그리기 및 갱신
             if (m_circleSize > 0.0f)
@@ -58,8 +58,11 @@ namespace ClickWar.View
                 using (Brush brh = new SolidBrush(Color.FromArgb(m_color.A - (int)(m_circleSize / m_endSize * (float)m_color.A),
                     m_color.R, m_color.G, m_color.B)))
                 {
-                    g.FillEllipse(brh, m_circlePos.X - m_circleSize / 2, m_circlePos.Y - m_circleSize / 2,
-                        m_circleSize, m_circleSize);
+                    int scaledSize = (int)(scale * m_circleSize);
+
+                    g.FillEllipse(brh, m_circlePos.X - scaledSize / 2,
+                        m_circlePos.Y - scaledSize / 2,
+                        scaledSize, scaledSize);
 
                     m_circleSize += m_scaleSpeed;
                     if (m_circleSize > m_endSize)

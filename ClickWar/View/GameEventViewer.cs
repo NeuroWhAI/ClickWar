@@ -63,7 +63,7 @@ namespace ClickWar.View
         {
             m_eventList.Insert(0, new KeyValuePair<string, Color>(text, textColor));
 
-            if (m_eventList.Count > 3)
+            if (m_eventList.Count > 9)
                 m_eventList.RemoveAt(m_eventList.Count - 1);
             else if (m_eventList.Count <= 1)
                 m_timer.Restart();

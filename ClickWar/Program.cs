@@ -19,6 +19,10 @@ namespace ClickWar
             string mutexName = "ClickWar_Mutex_Prevent_Multiple";
             Mutex mutex = new Mutex(true, mutexName, out bSuccess);
 
+#if DEBUG
+            bSuccess = true;
+#endif
+
             if (bSuccess)
             {
                 Application.EnableVisualStyles();

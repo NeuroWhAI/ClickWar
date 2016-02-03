@@ -184,24 +184,18 @@ namespace ClickWar.Util
         {
             var col = this.GetCollection(collectionName);
 
-            //List<Task> m_updateTaskList = new List<Task>();
+            List<Task> m_updateTaskList = new List<Task>();
 
             foreach (var itemInfo in indexItemListNeedUpdate)
             {
                 var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, itemInfo.Key);
                 var update = Builders<BsonDocument>.Update.Set(arrayProperty + "." + itemInfo.Key, itemInfo.Value);
 
-                var task = new Task(() => col.UpdateOne(filter, update));
-                task.Start();
-                //m_updateTaskList.Add(task);
-
-                //col.UpdateOne(filter, update);
+                var task = Task.Factory.StartNew(() => col.UpdateOne(filter, update));
+                m_updateTaskList.Add(task);
             }
 
-            /*foreach (var task in m_updateTaskList)
-            {
-                task.Wait();
-            }*/
+            Task.WaitAll(m_updateTaskList.ToArray(), 700);
         }
     }
 }

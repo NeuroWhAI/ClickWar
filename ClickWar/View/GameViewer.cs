@@ -49,7 +49,7 @@ namespace ClickWar.View
         }
 
         public int TileSize
-        { get; set; }
+        { get; set; } = 48;
 
         //##################################################################################
 
@@ -85,23 +85,23 @@ namespace ClickWar.View
         {
             var effect = new CircleEffect();
             effect.Start(Location.X + x * TileSize + TileSize / 2, Location.Y + y * TileSize + TileSize / 2,
-                6.0f, 100.0f, Color.OrangeRed);
+                24.0f, 512.0f, Color.OrangeRed);
 
             AddCircleEffect(effect);
 
 
-            if (tile.HaveOwner)
+            /*if (tile.HaveOwner)
             {
-                m_eventViewer.AddEvent(string.Format("\"{0}\"님의 영토가 공격받고 있습니다!", tile.Owner),
+                m_eventViewer.AddEvent(string.Format("\"{0}\"님의 타일 에너지 감소!", tile.Owner),
                     Color.Orange);
-            }
+            }*/
         }
 
         public void WhenTileCaptured(int x, int y, Game.GameTile tile)
         {
             var effect = new CircleEffect();
             effect.Start(Location.X + x * TileSize + TileSize / 2, Location.Y + y * TileSize + TileSize / 2,
-                12.0f, 200.0f, Color.AliceBlue);
+                48.0f, 1024.0f, Color.AliceBlue);
 
             AddCircleEffect(effect);
 
@@ -127,6 +127,22 @@ namespace ClickWar.View
                 m_eventViewer.AddEvent(string.Format("\"{0}\"님이 영토를 강화했습니다!", tile.Owner),
                     Color.Red);
             }*/
+        }
+
+        public void WhenSignChanged(int x, int y, Game.GameTile tile)
+        {
+            var effect = new CircleEffect();
+            effect.Start(Location.X + x * TileSize + TileSize / 2, Location.Y + y * TileSize + TileSize / 2,
+                80.0f, 2048.0f, Color.WhiteSmoke);
+
+            AddCircleEffect(effect);
+
+
+            if (tile.HaveOwner && tile.HaveSign)
+            {
+                m_eventViewer.AddEvent(string.Format("\"{0}\": \"{1}\"", tile.Owner, tile.Sign),
+                    Color.Black);
+            }
         }
 
         //##################################################################################
@@ -361,7 +377,7 @@ namespace ClickWar.View
             var circleEffectListClone = m_circleEffectList.ToArray();
             foreach (var circleEffect in circleEffectListClone)
             {
-                circleEffect.Draw(g);
+                circleEffect.Draw(g, (float)TileSize / 48.0f);
 
                 // 효과가 끝났으면 삭제목록에 추가
                 if (circleEffect.IsEnd)
@@ -370,7 +386,7 @@ namespace ClickWar.View
 
 
             // 이벤트 그리기
-            m_eventViewer.Draw(g, new Point(8, 100));
+            m_eventViewer.Draw(g, new Point(8, 200));
 
 
             // 클릭 카운트 표시

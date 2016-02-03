@@ -44,6 +44,8 @@ namespace ClickWar.Game
                     m_indexKey = Util.Utility.Random.Next(128, 1024);
                     m_index = value + m_indexKey;
                 }
+
+                this.Updated = false;
             }
         }
 
@@ -68,6 +70,8 @@ namespace ClickWar.Game
                     m_realOwner = value;
                     m_owner = new string(m_realOwner.Reverse().ToArray());
                 }
+
+                this.Updated = false;
             }
         }
 
@@ -93,13 +97,20 @@ namespace ClickWar.Game
                     m_powerKey = Util.Utility.Random.Next(128, 1024);
                     m_power = value + m_powerKey;
                 }
+
+                this.Updated = false;
             }
         }
 
         public string Sign
         {
             get { return m_sign; }
-            set { m_sign = value; }
+            set
+            {
+                m_sign = value;
+
+                this.Updated = false;
+            }
         }
 
         //##################################################################################
@@ -127,6 +138,9 @@ namespace ClickWar.Game
             get { return (Sign.Length > 0); }
         }
 
+        public bool Updated
+        { get; set; }
+
         //##################################################################################
 
         public MongoDB.Bson.BsonDocument ToBsonDocument()
@@ -142,6 +156,8 @@ namespace ClickWar.Game
 
         public void FromBsonDocument(MongoDB.Bson.BsonDocument doc)
         {
+            this.Updated = true;
+
             this.Owner = doc["Owner"].AsString;
             this.Power = doc["Power"].AsInt32;
             this.Sign = doc["Sign"].AsString;

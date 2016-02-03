@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace ClickWar.Controller
 {
@@ -12,7 +13,7 @@ namespace ClickWar.Controller
     {
         public GameController()
         {
-
+            m_clickTimer.Start();
         }
 
         //##################################################################################
@@ -31,6 +32,7 @@ namespace ClickWar.Controller
 
         //##################################################################################
 
+        protected Stopwatch m_clickTimer = new Stopwatch();
         protected bool m_bCanClick = true;
         protected int m_clickCount = 0, m_oldClickCount = 0;
         protected Point m_oldCursor;
@@ -78,6 +80,7 @@ namespace ClickWar.Controller
             m_gameMap.WhenTileCaptured += m_gameViewer.WhenTileCaptured;
             m_gameMap.WhenTileUnderAttack += m_gameViewer.WhenTileUnderAttack;
             m_gameMap.WhenTileUpgraded += m_gameViewer.WhenTileUpgraded;
+            m_gameMap.WhenSignChanged += m_gameViewer.WhenSignChanged;
 
 
             m_db.Connect();
@@ -123,40 +126,47 @@ namespace ClickWar.Controller
         public void WhenLeftClick(Func<Action, int, bool> threadJobPusher, int threadJobNum,
             Point cursor, Size formSize)
         {
-            // 클릭 횟수 증가
-            if (m_clickCount < 10)
-                ++m_clickCount;
-
-            if (m_bCanClick)
+            // 초당 클릭 수 제한
+            if (m_clickTimer.ElapsedMilliseconds >= 66)
             {
-                // 다음 갱신까지 클릭이벤트를 받지 않도록 설정.
-                m_bCanClick = false;
+                // 타이머 리셋
+                m_clickTimer.Restart();
 
-                // 현재 상태를 저장해두어 스레드가 일을 할때 이 값을 사용하도록 한다.
-                m_oldClickCount = m_clickCount;
-                m_oldCursor = new Point(cursor.X, cursor.Y);
-                m_oldPowerWay = m_powerWayNum;
-                m_oldPlayerName = m_playerName;
-                m_oldFormSize = new Size(formSize.Width, formSize.Height);
+                // 클릭 횟수 증가
+                if (m_clickCount < 10)
+                    ++m_clickCount;
+                
+                if (m_bCanClick)
+                {
+                    // 다음 갱신까지 클릭이벤트를 받지 않도록 설정.
+                    m_bCanClick = false;
 
-                // 클릭 처리 (비동기)
-                bool bSuccess = threadJobPusher(() =>
-                {
-                    UpdateGameByLeftClick(m_oldCursor.X, m_oldCursor.Y, m_oldFormSize,
-                        m_oldClickCount, m_oldPowerWay, m_oldPlayerName);
-                    m_bCanClick = true;
-                }, threadJobNum);
+                    // 현재 상태를 저장해두어 스레드가 일을 할때 이 값을 사용하도록 한다.
+                    m_oldClickCount = m_clickCount;
+                    m_oldCursor = new Point(cursor.X, cursor.Y);
+                    m_oldPowerWay = m_powerWayNum;
+                    m_oldPlayerName = m_playerName;
+                    m_oldFormSize = new Size(formSize.Width, formSize.Height);
 
-                // 클릭처리작업 추가 성공시
-                if (bSuccess)
-                {
-                    // 클릭 횟수 초기화
-                    m_clickCount = 0;
-                }
-                else
-                {
-                    // 클릭작업 추가에 실패했으므로 재시도 할 수 있도록 설정.
-                    m_bCanClick = true;
+                    // 클릭 처리 (비동기)
+                    bool bSuccess = threadJobPusher(() =>
+                    {
+                        UpdateGameByLeftClick(m_oldCursor.X, m_oldCursor.Y, m_oldFormSize,
+                            m_oldClickCount, m_oldPowerWay, m_oldPlayerName);
+                        m_bCanClick = true;
+                    }, threadJobNum);
+
+                    // 클릭처리작업 추가 성공시
+                    if (bSuccess)
+                    {
+                        // 클릭 횟수 초기화
+                        m_clickCount = 0;
+                    }
+                    else
+                    {
+                        // 클릭작업 추가에 실패했으므로 재시도 할 수 있도록 설정.
+                        m_bCanClick = true;
+                    }
                 }
             }
         }

@@ -66,7 +66,7 @@
             // 
             // timer_updateSlower
             // 
-            this.timer_updateSlower.Interval = 2000;
+            this.timer_updateSlower.Interval = 2500;
             this.timer_updateSlower.Tick += new System.EventHandler(this.timer_updateSlower_Tick);
             // 
             // groupBox1

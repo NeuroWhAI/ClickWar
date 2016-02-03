@@ -100,14 +100,17 @@ namespace ClickWar
 #if DEBUG
                     System.Diagnostics.Stopwatch jobTimer = new System.Diagnostics.Stopwatch();
                     jobTimer.Start();
+
+                    System.Diagnostics.Debug.Write(string.Format("Job{0}", i));
 #endif
 
 
-                    job();
+                    var task = Task.Factory.StartNew(job);
+                    task.Wait(4000);
 
 
 #if DEBUG
-                    System.Diagnostics.Debug.WriteLine(string.Format("Job{0}: {1}s", i,(double)jobTimer.ElapsedMilliseconds / 1000.0));
+                    System.Diagnostics.Debug.WriteLine(string.Format(": {0}s", (double)jobTimer.ElapsedMilliseconds / 1000.0));
 #endif
 
 

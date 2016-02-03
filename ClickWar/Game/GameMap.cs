@@ -38,6 +38,7 @@ namespace ClickWar.Game
         public event GameEventDelegate WhenTileUnderAttack; // 타일이 공격받고 있을때
         public event GameEventDelegate WhenTileCaptured; // 타일이 점령되었을때
         public event GameEventDelegate WhenTileUpgraded; // 타일의 힘이 강해졌을때
+        public event GameEventDelegate WhenSignChanged;
 
         //##################################################################################
 
@@ -220,21 +221,27 @@ namespace ClickWar.Game
 
             if (w < m_tileMap.GetLength(0) && h < m_tileMap.GetLength(1))
             {
-                string oldOwner = m_tileMap[w, h].Owner;
-                int oldPower = m_tileMap[w, h].Power;
+                var tile = m_tileMap[w, h];
+                
+                string oldOwner = tile.Owner;
+                int oldPower = tile.Power;
+                string oldSign = tile.Sign;
 
                 // 타일 갱신
-                m_tileMap[w, h].FromBsonDocument(tileArray[index].AsBsonDocument);
+                tile.FromBsonDocument(tileArray[index].AsBsonDocument);
 
 
                 // 이벤트 발생
-                if (oldOwner != m_tileMap[w, h].Owner)
-                    WhenTileCaptured(w, h, m_tileMap[w, h]);
+                if (oldPower > tile.Power)
+                        WhenTileUnderAttack(w, h, tile);
+                else if (oldPower < tile.Power)
+                    WhenTileUpgraded(w, h, tile);
 
-                if (oldPower < m_tileMap[w, h].Power)
-                    WhenTileUpgraded(w, h, m_tileMap[w, h]);
-                else if (oldPower > m_tileMap[w, h].Power)
-                    WhenTileUnderAttack(w, h, m_tileMap[w, h]);
+                if (oldOwner != tile.Owner)
+                    WhenTileCaptured(w, h, tile);
+
+                if (oldSign != tile.Sign && tile.HaveSign)
+                    WhenSignChanged(w, h, tile);
             }
 
 
@@ -524,7 +531,14 @@ namespace ClickWar.Game
                 &&
                 tile.Owner == playerName)
             {
+                string oldSign = tile.Sign;
+
                 tile.Sign = sign;
+
+
+                if (tile.HaveSign && tile.Sign != oldSign)
+                    WhenSignChanged(widthIndex, heightIndex, tile);
+
 
                 this.UploadTileAt(db, widthIndex, heightIndex);
             }
