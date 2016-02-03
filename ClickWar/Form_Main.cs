@@ -548,6 +548,16 @@ namespace ClickWar
             this.Select();
         }
 
+        private void listBox_rank_MouseMove(object sender, MouseEventArgs e)
+        {
+            int focusedIndex = this.listBox_rank.IndexFromPoint(e.Location);
+
+            if (focusedIndex >= 0 && focusedIndex < this.listBox_rank.Items.Count)
+            {
+                this.listBox_rank.SelectedIndex = focusedIndex;
+            }
+        }
+
         //##################################################################################
 
         private void WhenShutdownMessageChanged(string msg, bool shutdownFlag)
@@ -559,19 +569,24 @@ namespace ClickWar
 
         private void UpdateRank()
         {
+            int oldSelectedIndex = this.listBox_rank.SelectedIndex;
+
+
             this.listBox_rank.BeginUpdate();
-
-
-            this.listBox_rank.Items.Clear();
 
 
             var rank = m_gameMap.GetRank();
 
+            while (rank.Count > this.listBox_rank.Items.Count)
+                this.listBox_rank.Items.Add("");
+            while (rank.Count < this.listBox_rank.Items.Count)
+                this.listBox_rank.Items.RemoveAt(0);
+
             int index = 0;
             foreach (var info in rank)
             {
-                this.listBox_rank.Items.Add(string.Format("{0}: \"{1}\" #{2}",
-                    index + 1, info.Key, info.Value));
+                this.listBox_rank.Items[index] = string.Format("{0}: \"{1}\" #{2}",
+                    index + 1, info.Key, info.Value);
 
 
                 ++index;
@@ -579,6 +594,10 @@ namespace ClickWar
 
 
             this.listBox_rank.EndUpdate();
+
+
+            if(oldSelectedIndex < this.listBox_rank.Items.Count)
+                this.listBox_rank.SelectedIndex = oldSelectedIndex;
         }
     }
 }

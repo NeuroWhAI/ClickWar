@@ -26,15 +26,19 @@ namespace ClickWar.Game
         {
             get
             {
+                int temp = -1;
+
                 lock(m_indexLock)
                 {
                     int result = m_index - m_indexKey;
 
                     if (result == m_realIndex)
-                        return m_realIndex;
+                        temp = m_realIndex;
                     else
                         throw new Exception("Fuck you hacker.");
                 }
+
+                return temp;
             }
             set
             {
@@ -45,7 +49,7 @@ namespace ClickWar.Game
                     m_index = value + m_indexKey;
                 }
 
-                this.Updated = false;
+                this.IsLastVersion = false;
             }
         }
 
@@ -53,15 +57,19 @@ namespace ClickWar.Game
         {
             get
             {
+                string temp;
+
                 lock(m_ownerLock)
                 {
                     string result = new string(m_owner.Reverse().ToArray());
 
                     if (result == m_realOwner)
-                        return m_realOwner;
+                        temp = m_realOwner;
                     else
                         throw new Exception("Fuck you hacker.");
                 }
+
+                return temp;
             }
             set
             {
@@ -71,7 +79,7 @@ namespace ClickWar.Game
                     m_owner = new string(m_realOwner.Reverse().ToArray());
                 }
 
-                this.Updated = false;
+                this.IsLastVersion = false;
             }
         }
 
@@ -79,15 +87,19 @@ namespace ClickWar.Game
         {
             get
             {
+                int temp = 0;
+
                 lock(m_powerLock)
                 {
                     int result = m_power - m_powerKey;
 
                     if (result == m_realPower)
-                        return m_realPower;
+                        temp = m_realPower;
                     else
                         throw new Exception("Fuck you hacker.");
                 }
+
+                return temp;
             }
             set
             {
@@ -98,18 +110,31 @@ namespace ClickWar.Game
                     m_power = value + m_powerKey;
                 }
 
-                this.Updated = false;
+                this.IsLastVersion = false;
             }
         }
 
         public string Sign
         {
-            get { return m_sign; }
+            get
+            {
+                string temp;
+
+                lock (m_signLock)
+                {
+                    temp = m_sign;
+                }
+
+                return temp;
+            }
             set
             {
-                m_sign = value;
+                lock(m_signLock)
+                {
+                    m_sign = value;
+                }
 
-                this.Updated = false;
+                this.IsLastVersion = false;
             }
         }
 
@@ -125,6 +150,7 @@ namespace ClickWar.Game
         protected readonly object m_powerLock = new object();
 
         protected string m_sign = "";
+        protected readonly object m_signLock = new object();
 
         //##################################################################################
 
@@ -138,8 +164,8 @@ namespace ClickWar.Game
             get { return (Sign.Length > 0); }
         }
 
-        public bool Updated
-        { get; set; }
+        public bool IsLastVersion
+        { get; set; } = false;
 
         //##################################################################################
 
@@ -156,11 +182,11 @@ namespace ClickWar.Game
 
         public void FromBsonDocument(MongoDB.Bson.BsonDocument doc)
         {
-            this.Updated = true;
-
             this.Owner = doc["Owner"].AsString;
             this.Power = doc["Power"].AsInt32;
             this.Sign = doc["Sign"].AsString;
+
+            this.IsLastVersion = true;
         }
     }
 }

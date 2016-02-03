@@ -38,9 +38,12 @@ namespace ClickWar.View
                     int deltaX = value.X - m_location.X;
                     int deltaY = value.Y - m_location.Y;
 
-                    foreach (var effect in m_circleEffectList)
+                    lock(m_circleEffectListLock)
                     {
-                        effect.AddLocation(deltaX, deltaY);
+                        foreach (var effect in m_circleEffectList)
+                        {
+                            effect.AddLocation(deltaX, deltaY);
+                        }
                     }
                 }
 
@@ -65,6 +68,7 @@ namespace ClickWar.View
         //##################################################################################
 
         protected List<CircleEffect> m_circleEffectList = new List<CircleEffect>();
+        protected readonly object m_circleEffectListLock = new object();
 
         //##################################################################################
 
@@ -81,7 +85,7 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        public void WhenTileUnderAttack(int x, int y, Game.GameTile tile)
+        public void WhenTileUnderAttack(int x, int y, Game.GameTile tile, string oldOwner)
         {
             var effect = new CircleEffect();
             effect.Start(Location.X + x * TileSize + TileSize / 2, Location.Y + y * TileSize + TileSize / 2,
@@ -97,7 +101,7 @@ namespace ClickWar.View
             }*/
         }
 
-        public void WhenTileCaptured(int x, int y, Game.GameTile tile)
+        public void WhenTileCaptured(int x, int y, Game.GameTile tile, string oldOwner)
         {
             var effect = new CircleEffect();
             effect.Start(Location.X + x * TileSize + TileSize / 2, Location.Y + y * TileSize + TileSize / 2,
@@ -106,14 +110,21 @@ namespace ClickWar.View
             AddCircleEffect(effect);
 
 
-            if (tile.HaveOwner)
+            if (tile.HaveOwner
+                &&
+                tile.Owner != oldOwner)
             {
-                m_eventViewer.AddEvent(string.Format("\"{0}\"님이 영토를 차지했습니다!", tile.Owner),
+                string format = "\"{0}\"님이 \"{1}\"님의 영토를 점령했습니다!";
+
+                if(oldOwner.Length <= 0)
+                    format = "\"{0}\"님이 영토를 확장했습니다!";
+
+                m_eventViewer.AddEvent(string.Format(format, tile.Owner, oldOwner),
                     Color.Red);
             }
         }
 
-        public void WhenTileUpgraded(int x, int y, Game.GameTile tile)
+        public void WhenTileUpgraded(int x, int y, Game.GameTile tile, string oldOwner)
         {
             var effect = new CircleEffect();
             effect.Start(Location.X + x * TileSize + TileSize / 2, Location.Y + y * TileSize + TileSize / 2,
@@ -129,7 +140,7 @@ namespace ClickWar.View
             }*/
         }
 
-        public void WhenSignChanged(int x, int y, Game.GameTile tile)
+        public void WhenSignChanged(int x, int y, Game.GameTile tile, string oldOwner)
         {
             var effect = new CircleEffect();
             effect.Start(Location.X + x * TileSize + TileSize / 2, Location.Y + y * TileSize + TileSize / 2,
@@ -324,7 +335,7 @@ namespace ClickWar.View
             }
 
 
-            // 표지판 그리기
+            // 푯말 그리기
             if (TileSize > minDetailTileSize)
             {
                 for (int w = startPos.X; w <= endPos.X; ++w)
@@ -337,56 +348,51 @@ namespace ClickWar.View
                             continue;
 
 
-                        if (tile.HaveSign)
-                        {
-                            int locationX = Location.X + w * TileSize + TileSize / 2;
-                            int locationY = Location.Y + h * TileSize + TileSize / 2;
-
-                            var boxSize = TextRenderer.MeasureText(tile.Sign, m_font);
-                            int boxWidth = boxSize.Width + 4;
-                            int boxHeight = boxSize.Height + 8;
-
-                            g.FillPie(Brushes.SandyBrown,
-                                locationX - 16,
-                                locationY - 14,
-                                32,
-                                28,
-                                270 - 20,
-                                40);
-
-                            g.FillRectangle(Brushes.SandyBrown,
-                                locationX - boxWidth / 2,
-                                locationY - boxHeight - 8,
-                                boxWidth,
-                                boxHeight);
-
-                            g.DrawString(tile.Sign, m_font, Brushes.Black,
-                                locationX,
-                                locationY - boxHeight - 4,
-                                new StringFormat()
-                                {
-                                    Alignment = StringAlignment.Center
-                                });
-                        }
+                        DrawSign(g, tile, w, h);
                     }
                 }
             }
 
 
             // 효과 그리기 및 갱신
-            var circleEffectListClone = m_circleEffectList.ToArray();
-            foreach (var circleEffect in circleEffectListClone)
+            if (m_circleEffectList.Count > 0)
             {
-                circleEffect.Draw(g, (float)TileSize / 48.0f);
+                lock (m_circleEffectListLock)
+                {
+                    var circleEffectListClone = m_circleEffectList.ToArray();
+                    foreach (var circleEffect in circleEffectListClone)
+                    {
+                        circleEffect.Draw(g, (float)TileSize / 48.0f);
 
-                // 효과가 끝났으면 삭제목록에 추가
-                if (circleEffect.IsEnd)
-                    m_circleEffectList.Remove(circleEffect);
+                        // 효과가 끝났으면 삭제목록에 추가
+                        if (circleEffect.IsEnd)
+                            m_circleEffectList.Remove(circleEffect);
+                    }
+                }
             }
 
 
             // 이벤트 그리기
             m_eventViewer.Draw(g, new Point(8, 200));
+
+
+            // 마우스로 가르키는 타일의 정보 표시
+            if (TileSize <= minDetailTileSize)
+            {
+                var tile = gameMap.GetTileAt(m_focusedCoord.X, m_focusedCoord.Y);
+
+                DrawSign(g, tile, m_focusedCoord.X, m_focusedCoord.Y);
+
+                string infoText;
+
+                if (tile != null && tile.HaveOwner)
+                    infoText = string.Format("Owner: {0}\nPower: {1}", tile.Owner, tile.Power);
+                else
+                    infoText = "[Empty]";
+
+                g.DrawString(infoText, m_font, Brushes.Black,
+                    cursor.X + 16.0f, cursor.Y - 6.0f);
+            }
 
 
             // 클릭 카운트 표시
@@ -427,16 +433,58 @@ namespace ClickWar.View
                 });
         }
 
+        protected void DrawSign(Graphics g, Game.GameTile tile, int w, int h)
+        {
+            if (tile != null && tile.HaveSign)
+            {
+                int locationX = Location.X + w * TileSize + TileSize / 2;
+                int locationY = Location.Y + h * TileSize + TileSize / 2;
+
+                var boxSize = TextRenderer.MeasureText(tile.Sign, m_font);
+                int boxWidth = boxSize.Width + 4;
+                int boxHeight = boxSize.Height + 8;
+
+                g.FillPie(Brushes.SandyBrown,
+                    locationX - 16,
+                    locationY - 14,
+                    32,
+                    28,
+                    270 - 20,
+                    40);
+
+                g.FillRectangle(Brushes.SandyBrown,
+                    locationX - boxWidth / 2,
+                    locationY - boxHeight - 8,
+                    boxWidth,
+                    boxHeight);
+
+                g.DrawString(tile.Sign, m_font, Brushes.Black,
+                    locationX,
+                    locationY - boxHeight - 4,
+                    new StringFormat()
+                    {
+                        Alignment = StringAlignment.Center
+                    });
+            }
+        }
+
         //##################################################################################
 
         public void AddCircleEffect(CircleEffect effect)
         {
-            m_circleEffectList.Add(effect);
+            lock(m_circleEffectListLock)
+            {
+                m_circleEffectList.Add(effect);
+            }
         }
 
         public void ClearEffectAndEvent()
         {
-            m_circleEffectList.Clear();
+            lock(m_circleEffectListLock)
+            {
+                m_circleEffectList.Clear();
+            }
+
             m_eventViewer.ClearEvent();
         }
 

@@ -275,11 +275,11 @@
             this.listBox_rank.Location = new System.Drawing.Point(6, 24);
             this.listBox_rank.Name = "listBox_rank";
             this.listBox_rank.ScrollAlwaysVisible = true;
-            this.listBox_rank.SelectionMode = System.Windows.Forms.SelectionMode.None;
             this.listBox_rank.Size = new System.Drawing.Size(215, 34);
             this.listBox_rank.TabIndex = 5;
             this.listBox_rank.MouseEnter += new System.EventHandler(this.listBox_rank_MouseEnter);
             this.listBox_rank.MouseLeave += new System.EventHandler(this.listBox_rank_MouseLeave);
+            this.listBox_rank.MouseMove += new System.Windows.Forms.MouseEventHandler(this.listBox_rank_MouseMove);
             // 
             // Form_Main
             // 

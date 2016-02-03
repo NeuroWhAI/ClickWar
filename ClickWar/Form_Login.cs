@@ -166,34 +166,31 @@ namespace ClickWar
 
         protected void UpdateAutoLogin()
         {
-            if (Util.RegistryHelper.GetDataAsBool("AutoLoginFlag", false) != this.checkBox_autoLogin.Checked)
+            if (this.checkBox_autoLogin.Checked)
             {
-                if (this.checkBox_autoLogin.Checked)
-                {
-                    Util.RegistryHelper.SetData("LoginName", this.textBox_name.Text);
+                Util.RegistryHelper.SetData("LoginName", this.textBox_name.Text);
 
 
-                    RijndaelManaged aes = new RijndaelManaged();
-                    aes.KeySize = 256;
-                    aes.BlockSize = 128;
-                    aes.Mode = CipherMode.CBC;
-                    aes.Padding = PaddingMode.PKCS7;
-                    aes.GenerateKey();
+                RijndaelManaged aes = new RijndaelManaged();
+                aes.KeySize = 256;
+                aes.BlockSize = 128;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+                aes.GenerateKey();
 
-                    string hexData = Util.EncoderDecoder.Encode(this.textBox_password.Text, aes.Key);
-                    Util.RegistryHelper.SetData("LoginPass", hexData);
+                string hexData = Util.EncoderDecoder.Encode(this.textBox_password.Text, aes.Key);
+                Util.RegistryHelper.SetData("LoginPass", hexData);
 
-                    Util.RegistryHelper.SetData("LoginKey", BitConverter.ToString(aes.Key).Replace("-", ""));
-                }
-                else
-                {
-                    Util.RegistryHelper.SetData("LoginName", "");
-                    Util.RegistryHelper.SetData("LoginPass", "");
-                    Util.RegistryHelper.SetData("LoginKey", "");
-                }
-
-                Util.RegistryHelper.SetData<bool>("AutoLoginFlag", this.checkBox_autoLogin.Checked);
+                Util.RegistryHelper.SetData("LoginKey", BitConverter.ToString(aes.Key).Replace("-", ""));
             }
+            else
+            {
+                Util.RegistryHelper.SetData("LoginName", "");
+                Util.RegistryHelper.SetData("LoginPass", "");
+                Util.RegistryHelper.SetData("LoginKey", "");
+            }
+
+            Util.RegistryHelper.SetData<bool>("AutoLoginFlag", this.checkBox_autoLogin.Checked);
         }
 
         protected void SequenceToGame()

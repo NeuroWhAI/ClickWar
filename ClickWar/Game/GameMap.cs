@@ -34,7 +34,7 @@ namespace ClickWar.Game
 
         //##################################################################################
 
-        public delegate void GameEventDelegate(int x, int y, GameTile tile);
+        public delegate void GameEventDelegate(int x, int y, GameTile tile, string oldOwner);
         public event GameEventDelegate WhenTileUnderAttack; // 타일이 공격받고 있을때
         public event GameEventDelegate WhenTileCaptured; // 타일이 점령되었을때
         public event GameEventDelegate WhenTileUpgraded; // 타일의 힘이 강해졌을때
@@ -138,6 +138,7 @@ namespace ClickWar.Game
                     {
                         m_tileMap[w, h] = new GameTile();
                         m_tileMap[w, h].Index = w * height + h;
+                        m_tileMap[w, h].IsLastVersion = true;
                     }
                 }
             }
@@ -227,21 +228,29 @@ namespace ClickWar.Game
                 int oldPower = tile.Power;
                 string oldSign = tile.Sign;
 
-                // 타일 갱신
-                tile.FromBsonDocument(tileArray[index].AsBsonDocument);
+                // 로컬의 타일이 DB보다 더 최신인경우 한번 건너뜀 (롤백 감소)
+                if (tile.IsLastVersion)
+                {
+                    // 타일 갱신
+                    tile.FromBsonDocument(tileArray[index].AsBsonDocument);
 
 
-                // 이벤트 발생
-                if (oldPower > tile.Power)
-                        WhenTileUnderAttack(w, h, tile);
-                else if (oldPower < tile.Power)
-                    WhenTileUpgraded(w, h, tile);
+                    // 이벤트 발생
+                    if (oldPower > tile.Power)
+                        WhenTileUnderAttack(w, h, tile, oldOwner);
+                    else if (oldPower < tile.Power)
+                        WhenTileUpgraded(w, h, tile, oldOwner);
 
-                if (oldOwner != tile.Owner)
-                    WhenTileCaptured(w, h, tile);
+                    if (oldOwner != tile.Owner)
+                        WhenTileCaptured(w, h, tile, oldOwner);
 
-                if (oldSign != tile.Sign && tile.HaveSign)
-                    WhenSignChanged(w, h, tile);
+                    if (oldSign != tile.Sign && tile.HaveSign)
+                        WhenSignChanged(w, h, tile, oldOwner);
+                }
+                else
+                {
+                    tile.IsLastVersion = true;
+                }
             }
 
 
@@ -343,15 +352,16 @@ namespace ClickWar.Game
 
 
             // 이벤트 발생
+            var tile = this.GetTileAt(tileWidthIndex, tileHeightIndex);
             if (delta > 0)
             {
                 WhenTileUpgraded(tileWidthIndex, tileHeightIndex,
-                    this.GetTileAt(tileWidthIndex, tileHeightIndex));
+                    tile, tile.Owner);
             }
             else if (delta < 0)
             {
                 WhenTileUnderAttack(tileWidthIndex, tileHeightIndex,
-                    this.GetTileAt(tileWidthIndex, tileHeightIndex));
+                    tile, tile.Owner);
             }
 
 
@@ -402,9 +412,11 @@ namespace ClickWar.Game
 
             // 이벤트 발생
             if (attackPower > 0)
-                WhenTileUnderAttack(tileWidthIndex, tileHeightIndex, tile);
+                WhenTileUnderAttack(tileWidthIndex, tileHeightIndex, tile,
+                    playerName);
             else if (attackPower < 0)
-                WhenTileUpgraded(tileWidthIndex, tileHeightIndex, tile);
+                WhenTileUpgraded(tileWidthIndex, tileHeightIndex, tile,
+                    playerName);
 
 
             // 공격에 사용된 타일의 힘 감소
@@ -423,6 +435,8 @@ namespace ClickWar.Game
             // 점령판정
             if (tile.Power <= 0)
             {
+                string oldOwner = tile.Owner;
+
                 // 점령
                 tile.Owner = playerName;
                 tile.Power = Math.Abs(tile.Power) + 2;
@@ -432,7 +446,8 @@ namespace ClickWar.Game
 
 
                 // 이벤트 발생
-                WhenTileCaptured(tileWidthIndex, tileHeightIndex, tile);
+                WhenTileCaptured(tileWidthIndex, tileHeightIndex, tile,
+                    oldOwner);
             }
 
             // 변경사항 업로드
@@ -496,7 +511,8 @@ namespace ClickWar.Game
 
 
                     // 이벤트 발생
-                    WhenTileUpgraded(dirX[dirNum], dirY[dirNum], targetTile);
+                    WhenTileUpgraded(dirX[dirNum], dirY[dirNum], targetTile,
+                        playerName);
                 }
             }
         }
@@ -511,14 +527,18 @@ namespace ClickWar.Game
                 // 있으면 buildCost보다 낮은 땅일시 그만큼 소모하고 건국
                 if (tile.Power < buildCost)
                 {
+                    string oldOwner = tile.Owner;
+
                     tile.Owner = playerName;
                     tile.Power = buildCost - tile.Power;
+                    tile.Sign = "";
 
                     this.UploadTileAt(db, widthIndex, heightIndex);
 
 
                     // 이벤트 발생
-                    WhenTileCaptured(widthIndex, heightIndex, tile);
+                    WhenTileCaptured(widthIndex, heightIndex, tile,
+                        oldOwner);
                 }
             }
         }
@@ -537,7 +557,8 @@ namespace ClickWar.Game
 
 
                 if (tile.HaveSign && tile.Sign != oldSign)
-                    WhenSignChanged(widthIndex, heightIndex, tile);
+                    WhenSignChanged(widthIndex, heightIndex, tile,
+                        playerName);
 
 
                 this.UploadTileAt(db, widthIndex, heightIndex);
