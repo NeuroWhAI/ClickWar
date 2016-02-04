@@ -550,6 +550,9 @@ namespace ClickWar
 
         private void listBox_rank_MouseMove(object sender, MouseEventArgs e)
         {
+            // 리스트 박스가 갱신되더라도 선택된 아이템이 있다면 스크롤이 초기화되지 않는 현상을 이용한다.
+            // 자동으로 그러기위해서 마우스를 누르지 않고 움직이기만 하더라도 해당 아이템을 선택하게 한다.
+
             int focusedIndex = this.listBox_rank.IndexFromPoint(e.Location);
 
             if (focusedIndex >= 0 && focusedIndex < this.listBox_rank.Items.Count)
@@ -569,9 +572,6 @@ namespace ClickWar
 
         private void UpdateRank()
         {
-            int oldSelectedIndex = this.listBox_rank.SelectedIndex;
-
-
             this.listBox_rank.BeginUpdate();
 
 
@@ -594,10 +594,6 @@ namespace ClickWar
 
 
             this.listBox_rank.EndUpdate();
-
-
-            if(oldSelectedIndex < this.listBox_rank.Items.Count)
-                this.listBox_rank.SelectedIndex = oldSelectedIndex;
         }
     }
 }

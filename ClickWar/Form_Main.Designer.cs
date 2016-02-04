@@ -73,9 +73,9 @@
             // 
             this.groupBox1.Controls.Add(this.button_scaleDown);
             this.groupBox1.Controls.Add(this.button_scaleUp);
-            this.groupBox1.Location = new System.Drawing.Point(12, 12);
+            this.groupBox1.Location = new System.Drawing.Point(13, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(90, 68);
+            this.groupBox1.Size = new System.Drawing.Size(91, 68);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "View";
@@ -85,7 +85,7 @@
             this.button_scaleDown.Font = new System.Drawing.Font("굴림", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.button_scaleDown.Location = new System.Drawing.Point(48, 24);
             this.button_scaleDown.Name = "button_scaleDown";
-            this.button_scaleDown.Size = new System.Drawing.Size(36, 36);
+            this.button_scaleDown.Size = new System.Drawing.Size(35, 36);
             this.button_scaleDown.TabIndex = 2;
             this.button_scaleDown.Text = "-";
             this.button_scaleDown.UseVisualStyleBackColor = true;
@@ -94,9 +94,9 @@
             // button_scaleUp
             // 
             this.button_scaleUp.Font = new System.Drawing.Font("굴림", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
-            this.button_scaleUp.Location = new System.Drawing.Point(6, 24);
+            this.button_scaleUp.Location = new System.Drawing.Point(5, 24);
             this.button_scaleUp.Name = "button_scaleUp";
-            this.button_scaleUp.Size = new System.Drawing.Size(36, 36);
+            this.button_scaleUp.Size = new System.Drawing.Size(35, 36);
             this.button_scaleUp.TabIndex = 1;
             this.button_scaleUp.Text = "+";
             this.button_scaleUp.UseVisualStyleBackColor = true;
@@ -108,9 +108,9 @@
             this.groupBox2.Controls.Add(this.label2);
             this.groupBox2.Controls.Add(this.label_playerName);
             this.groupBox2.Controls.Add(this.label1);
-            this.groupBox2.Location = new System.Drawing.Point(108, 12);
+            this.groupBox2.Location = new System.Drawing.Point(109, 12);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(225, 68);
+            this.groupBox2.Size = new System.Drawing.Size(227, 68);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Profile";
@@ -118,7 +118,7 @@
             // label_playerPower
             // 
             this.label_playerPower.AutoSize = true;
-            this.label_playerPower.Location = new System.Drawing.Point(65, 45);
+            this.label_playerPower.Location = new System.Drawing.Point(63, 45);
             this.label_playerPower.Name = "label_playerPower";
             this.label_playerPower.Size = new System.Drawing.Size(74, 15);
             this.label_playerPower.TabIndex = 2;
@@ -127,7 +127,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 45);
+            this.label2.Location = new System.Drawing.Point(5, 45);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(58, 15);
             this.label2.TabIndex = 2;
@@ -136,7 +136,7 @@
             // label_playerName
             // 
             this.label_playerName.AutoSize = true;
-            this.label_playerName.Location = new System.Drawing.Point(65, 24);
+            this.label_playerName.Location = new System.Drawing.Point(63, 24);
             this.label_playerName.Name = "label_playerName";
             this.label_playerName.Size = new System.Drawing.Size(74, 15);
             this.label_playerName.TabIndex = 2;
@@ -145,18 +145,18 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 24);
+            this.label1.Location = new System.Drawing.Point(5, 24);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(53, 15);
+            this.label1.Size = new System.Drawing.Size(58, 15);
             this.label1.TabIndex = 2;
-            this.label1.Text = "Name :";
+            this.label1.Text = "Name  :";
             // 
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.button_chat);
             this.groupBox3.Controls.Add(this.button_reColor);
             this.groupBox3.Controls.Add(this.button_logout);
-            this.groupBox3.Location = new System.Drawing.Point(807, 12);
+            this.groupBox3.Location = new System.Drawing.Point(805, 12);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(264, 68);
             this.groupBox3.TabIndex = 2;
@@ -167,7 +167,7 @@
             // 
             this.button_chat.Location = new System.Drawing.Point(208, 24);
             this.button_chat.Name = "button_chat";
-            this.button_chat.Size = new System.Drawing.Size(50, 34);
+            this.button_chat.Size = new System.Drawing.Size(51, 34);
             this.button_chat.TabIndex = 5;
             this.button_chat.Text = "Chat";
             this.button_chat.UseVisualStyleBackColor = true;
@@ -175,9 +175,9 @@
             // 
             // button_reColor
             // 
-            this.button_reColor.Location = new System.Drawing.Point(100, 24);
+            this.button_reColor.Location = new System.Drawing.Point(99, 24);
             this.button_reColor.Name = "button_reColor";
-            this.button_reColor.Size = new System.Drawing.Size(81, 36);
+            this.button_reColor.Size = new System.Drawing.Size(83, 36);
             this.button_reColor.TabIndex = 4;
             this.button_reColor.Text = "ReColor";
             this.button_reColor.UseVisualStyleBackColor = true;
@@ -185,7 +185,7 @@
             // 
             // button_logout
             // 
-            this.button_logout.Location = new System.Drawing.Point(6, 24);
+            this.button_logout.Location = new System.Drawing.Point(5, 24);
             this.button_logout.Name = "button_logout";
             this.button_logout.Size = new System.Drawing.Size(88, 36);
             this.button_logout.TabIndex = 3;
@@ -211,7 +211,7 @@
             // 
             this.button_powerWayRight.Location = new System.Drawing.Point(187, 24);
             this.button_powerWayRight.Name = "button_powerWayRight";
-            this.button_powerWayRight.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayRight.Size = new System.Drawing.Size(35, 36);
             this.button_powerWayRight.TabIndex = 8;
             this.button_powerWayRight.Text = "→";
             this.button_powerWayRight.UseVisualStyleBackColor = true;
@@ -219,9 +219,9 @@
             // 
             // button_powerWayLeft
             // 
-            this.button_powerWayLeft.Location = new System.Drawing.Point(145, 24);
+            this.button_powerWayLeft.Location = new System.Drawing.Point(147, 24);
             this.button_powerWayLeft.Name = "button_powerWayLeft";
-            this.button_powerWayLeft.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayLeft.Size = new System.Drawing.Size(35, 36);
             this.button_powerWayLeft.TabIndex = 7;
             this.button_powerWayLeft.Text = "←";
             this.button_powerWayLeft.UseVisualStyleBackColor = true;
@@ -229,9 +229,9 @@
             // 
             // button_powerWayDown
             // 
-            this.button_powerWayDown.Location = new System.Drawing.Point(103, 24);
+            this.button_powerWayDown.Location = new System.Drawing.Point(101, 24);
             this.button_powerWayDown.Name = "button_powerWayDown";
-            this.button_powerWayDown.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayDown.Size = new System.Drawing.Size(35, 36);
             this.button_powerWayDown.TabIndex = 6;
             this.button_powerWayDown.Text = "↓";
             this.button_powerWayDown.UseVisualStyleBackColor = true;
@@ -241,7 +241,7 @@
             // 
             this.button_powerWayUp.Location = new System.Drawing.Point(61, 24);
             this.button_powerWayUp.Name = "button_powerWayUp";
-            this.button_powerWayUp.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayUp.Size = new System.Drawing.Size(35, 36);
             this.button_powerWayUp.TabIndex = 5;
             this.button_powerWayUp.Text = "↑";
             this.button_powerWayUp.UseVisualStyleBackColor = true;
@@ -250,9 +250,9 @@
             // button_powerWayHere
             // 
             this.button_powerWayHere.Font = new System.Drawing.Font("굴림", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
-            this.button_powerWayHere.Location = new System.Drawing.Point(6, 24);
+            this.button_powerWayHere.Location = new System.Drawing.Point(5, 24);
             this.button_powerWayHere.Name = "button_powerWayHere";
-            this.button_powerWayHere.Size = new System.Drawing.Size(36, 36);
+            this.button_powerWayHere.Size = new System.Drawing.Size(35, 36);
             this.button_powerWayHere.TabIndex = 4;
             this.button_powerWayHere.Text = "◎";
             this.button_powerWayHere.UseVisualStyleBackColor = true;
@@ -261,7 +261,7 @@
             // groupBox_rank
             // 
             this.groupBox_rank.Controls.Add(this.listBox_rank);
-            this.groupBox_rank.Location = new System.Drawing.Point(574, 12);
+            this.groupBox_rank.Location = new System.Drawing.Point(573, 12);
             this.groupBox_rank.Name = "groupBox_rank";
             this.groupBox_rank.Size = new System.Drawing.Size(227, 68);
             this.groupBox_rank.TabIndex = 4;
@@ -272,7 +272,7 @@
             // 
             this.listBox_rank.FormattingEnabled = true;
             this.listBox_rank.ItemHeight = 15;
-            this.listBox_rank.Location = new System.Drawing.Point(6, 24);
+            this.listBox_rank.Location = new System.Drawing.Point(5, 24);
             this.listBox_rank.Name = "listBox_rank";
             this.listBox_rank.ScrollAlwaysVisible = true;
             this.listBox_rank.Size = new System.Drawing.Size(215, 34);

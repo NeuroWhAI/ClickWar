@@ -51,7 +51,9 @@ namespace ClickWar.Util
                 .ToArray());
 
             m_client = new MongoClient(dbURI);
+            //m_client = new MongoClient("mongodb://test:test@ds053305.mongolab.com:53305/click_war_test");
             m_db = m_client.GetDatabase("click_war");
+            //m_db = m_client.GetDatabase("click_war_test");
 
 
             return 0;
@@ -61,7 +63,7 @@ namespace ClickWar.Util
         {
             if (m_task != null)
             {
-                m_task.Wait();
+                m_task.Wait(8000);
                 m_task = null;
             }
 
@@ -196,6 +198,41 @@ namespace ClickWar.Util
             }
 
             Task.WaitAll(m_updateTaskList.ToArray(), 700);
+        }
+
+        public void UpdateDocumentArray(string collectionName, string documentName, string arrayProperty, string indexName,
+            int index, BsonValue newValue)
+        {
+            var col = this.GetCollection(collectionName);
+
+            var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, index);
+            var update = Builders<BsonDocument>.Update.Set(arrayProperty + "." + index, newValue);
+
+            col.UpdateMany(filter, update);
+        }
+
+        public int CheckCountIf(string collectionName, string propertyForCheck, BsonValue checkValue,
+            out List<BsonDocument> matchList)
+        {
+            var col = this.GetCollection(collectionName);
+
+            var filter = Builders<BsonDocument>.Filter.Eq(propertyForCheck, checkValue);
+
+            var result = col.Find(filter).ToListAsync();
+            result.Wait();
+
+
+            matchList = result.Result;
+            return result.Result.Count;
+        }
+
+        public async void DeleteDocumentAsync(string collectionName, string documentName)
+        {
+            var col = this.GetCollection(collectionName);
+
+            var filter = Builders<BsonDocument>.Filter.Exists(documentName);
+
+            await col.DeleteOneAsync(filter);
         }
     }
 }

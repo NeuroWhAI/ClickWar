@@ -74,10 +74,17 @@ namespace ClickWar
 
                 for (int i = 0; i < 4; ++i)
                 {
-                    if (int.Parse(versionData[i]) < int.Parse(versionDoc["v" + i].AsString))
+                    int thisVersion = int.Parse(versionData[i]);
+                    int serverVersion = int.Parse(versionDoc["v" + i].AsString);
+
+                    if (thisVersion < serverVersion)
                     {
                         updateExist = true;
 
+                        break;
+                    }
+                    else if (thisVersion > serverVersion)
+                    {
                         break;
                     }
                 }
@@ -108,10 +115,10 @@ namespace ClickWar
             this.checkBox_autoLogin.Checked = Util.RegistryHelper.GetDataAsBool("AutoLoginFlag", false);
             if (this.checkBox_autoLogin.Checked)
             {
-                this.textBox_name.Enabled = false;
-                this.textBox_password.Enabled = false;
-                this.button_login.Enabled = false;
+                // 인터페이스 비활성화
+                DisableUI();
                 
+                // 레지스트리에서 로그인 정보 가져옴
                 this.textBox_name.Text = Util.RegistryHelper.GetData("LoginName", "");
 
                 var key = Util.RegistryHelper.GetData("LoginKey", "");
@@ -121,6 +128,7 @@ namespace ClickWar
                      .Select(x => Convert.ToByte(key.Substring(x, 2), 16))
                      .ToArray());
 
+                // 계정정보 확인
                 m_db.GetDocumentAsync("Users", this.textBox_name.Text, this.WhenReceiveDocument);
             }
         }
@@ -144,10 +152,10 @@ namespace ClickWar
                 ||
                 this.textBox_password.Text.Length > 0)
             {
-                this.textBox_name.Enabled = false;
-                this.textBox_password.Enabled = false;
-                this.button_login.Enabled = false;
+                // 인터페이스 비활성화
+                DisableUI();
 
+                // 계정정보 확인
                 m_db.GetDocumentAsync("Users", this.textBox_name.Text, this.WhenReceiveDocument);
             }
             else
@@ -160,6 +168,22 @@ namespace ClickWar
         private void button_exit_Click(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+
+        //##################################################################################
+
+        protected void EnableUI()
+        {
+            this.textBox_name.Invoke(new MethodInvoker(() => this.textBox_name.Enabled = true));
+            this.textBox_password.Invoke(new MethodInvoker(() => this.textBox_password.Enabled = true));
+            this.button_login.Invoke(new MethodInvoker(() => this.button_login.Enabled = true));
+        }
+
+        protected void DisableUI()
+        {
+            this.textBox_name.Invoke(new MethodInvoker(() => this.textBox_name.Enabled = false));
+            this.textBox_password.Invoke(new MethodInvoker(() => this.textBox_password.Enabled = false));
+            this.button_login.Invoke(new MethodInvoker(() => this.button_login.Enabled = false));
         }
 
         //##################################################################################
@@ -213,21 +237,26 @@ namespace ClickWar
 
         protected void WhenReceiveDocument(MongoDB.Bson.BsonDocument userDoc)
         {
-            this.textBox_name.Invoke(new MethodInvoker(() => this.textBox_name.Enabled = true));
-            this.textBox_password.Invoke(new MethodInvoker(() => this.textBox_password.Enabled = true));
-            this.button_login.Invoke(new MethodInvoker(() => this.button_login.Enabled = true));
+            string userName = this.textBox_name.Text;
+            string userPassword = this.textBox_password.Text;
+
+
+            // 아이피 얻어옴
+            var hostIPList = Util.Utility.GetHostIPList();
+
+            // 아이피 배열 만듬
+            MongoDB.Bson.BsonArray ipArr = new MongoDB.Bson.BsonArray(hostIPList);
 
 
             if (userDoc == null)
             {
                 var selection = MessageBox.Show(@"해당 계정이 없습니다.
 현재 정보로 가입하시겠습니까?
-주의, 자주 쓰시는 계정정보로 설정하시면 보안문제가 있을 수 있습니다.", "Login Error!",
+※ 자주 쓰시는 계정정보로 설정하시면 보안문제가 있을 수 있습니다.", "Login Error!",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                 if (selection == DialogResult.Yes)
                 {
-                    // 계정정보 암호화
                     RijndaelManaged aes = new RijndaelManaged();
                     aes.KeySize = 256;
                     aes.BlockSize = 128;
@@ -235,16 +264,54 @@ namespace ClickWar
                     aes.Padding = PaddingMode.PKCS7;
                     aes.GenerateKey();
 
+                    List<MongoDB.Bson.BsonDocument> overlapDocList;
+
+                    // 계정 중복 확인
+                    if (m_db.CheckCountIf("Users", "Unique", ipArr, out overlapDocList) > 0)
+                    {
+                        // 중복
+
+                        var retryResult = MessageBox.Show(@"동일한 IP로 등록된 다른 계정이 존재하여 진행할 수 없습니다.
+이전 계정을 삭제하고 이 정보로 다시 가입을 시도하시겠습니까?
+※ 이전 계정이 소유한 타일은 전부 초기화됩니다.",
+                            "Login Error!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                        if (retryResult == DialogResult.Yes)
+                        {
+                            DeleteUser(overlapDocList);
+                        }
+                        else
+                        {
+                            EnableUI();
+                            return;
+                        }
+                    }
+
+
+                    // 개인정보수집 동의
+                    if (MessageBox.Show(@"[안내]
+계정의 중복을 확인하기 위해서
+로그인시 현재 PC의 IP주소와 MAC주소를 DB로 전송합니다.
+계정의 정보를 확인하는 것 외의 목적으로 사용되지 않습니다.
+동의하시겠습니까?", "Agreement", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    {
+                        EnableUI();
+                        return;
+                    }
+
+
+                    // 계정정보 암호화
                     string encryptKey = BitConverter.ToString(aes.Key).Replace("-", "");
-                    string encryptedPass = Util.EncoderDecoder.Encode(this.textBox_password.Text, aes.Key);
+                    string encryptedPass = Util.EncoderDecoder.Encode(userPassword, aes.Key);
 
                     // 계정 생성
-                    userDoc = m_db.CreateDocument("Users", this.textBox_name.Text,
+                    userDoc = m_db.CreateDocument("Users", userName,
                         new MongoDB.Bson.BsonDocument
                         {
-                                { "Name", this.textBox_name.Text },
-                                { "Pass", encryptedPass },
-                                { "Key", encryptKey }
+                            { "Name", userName },
+                            { "Pass", encryptedPass },
+                            { "Key", encryptKey },
+                            { "Unique", ipArr }
                         });
 
                     // 계정 생성 실패시
@@ -252,10 +319,14 @@ namespace ClickWar
                     {
                         MessageBox.Show("계정을 생성할 수 없습니다.", "DB Error!",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                        EnableUI();
+                        return;
                     }
                 }
                 else
                 {
+                    EnableUI();
                     return;
                 }
             }
@@ -270,16 +341,60 @@ namespace ClickWar
                     .ToArray());
 
                 // 로그인 정보 대조
-                if (userDoc["Name"] != this.textBox_name.Text
+                if (userDoc["Name"] != userName
                     ||
-                    decryptedPass != this.textBox_password.Text)
+                    decryptedPass != userPassword)
                 {
                     MessageBox.Show("로그인 정보가 올바르지 않습니다.", "Login Error!",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
+                    EnableUI();
                     return;
                 }
+                else
+                {
+                    // 계정의 아이피 정보 갱신
+                    if (userDoc["Unique"] != ipArr)
+                    {
+                        userDoc["Unique"] = ipArr;
+
+                        m_db.UpdateDocument("Users", userName, userDoc);
+                    }
+
+                    // 계정 중복 확인
+                    List<MongoDB.Bson.BsonDocument> overlapDocList;
+                    if (m_db.CheckCountIf("Users", "Unique", ipArr, out overlapDocList) > 1)
+                    {
+                        var retryResult = MessageBox.Show(@"동일한 IP로 등록된 다른 계정이 존재하여 진행할 수 없습니다.
+이전 계정을 삭제하고 이 정보로 다시 가입을 시도하시겠습니까?
+※ 이전 계정이 소유한 타일은 전부 초기화됩니다.",
+    "Login Error!", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                        if (retryResult == DialogResult.Yes)
+                        {
+                            // 현재 계정은 삭제될 계정 목록에서 제거
+                            overlapDocList.RemoveAll(delegate (MongoDB.Bson.BsonDocument doc)
+                            {
+                                return (doc["Name"] == userName);
+                            });
+
+                            
+                            DeleteUser(overlapDocList);
+                        }
+                        else
+                        {
+                            EnableUI();
+                            return;
+                        }
+                    }
+                }
             }
+
+
+            // 여기까지 왔으면 로그인 성공
+
+
+            EnableUI();
 
 
             // 자동 로그인 정보 갱신
@@ -288,6 +403,24 @@ namespace ClickWar
 
             // 게임 화면 띄우기
             this.Invoke(new MethodInvoker(() => this.SequenceToGame()));
+        }
+
+        protected void DeleteUser(List<MongoDB.Bson.BsonDocument> docList)
+        {
+            // 임시로 게임 상태를 저장하고 서버를 갱신할 게임맵을 생성.
+            // db를 생성자에 넘겨줌으로서 동기화가 이루어진다.
+            Game.GameMap tempGame = new Game.GameMap(m_db);
+
+            // 이전 계정 삭제
+            foreach (var doc in docList)
+            {
+                string deceasedName = doc["Name"].AsString;
+
+                m_db.DeleteDocumentAsync("Users", deceasedName);
+
+                // 해당 계정이 소유하는 타일 초기화
+                tempGame.DeleteAllOf(m_db, deceasedName);
+            }
         }
     }
 }

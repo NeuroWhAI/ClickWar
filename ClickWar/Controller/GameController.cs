@@ -195,6 +195,8 @@ namespace ClickWar.Controller
 
 
             m_cursor = cursor;
+
+
             int x, y;
             this.GetFocusedLocation(out x, out y);
 
@@ -328,6 +330,12 @@ namespace ClickWar.Controller
 
         public void ChangeViewScale(int delta, Size formSize)
         {
+            // 확대/축소에 따라 화면도 보던 곳을 추적.
+            int camMoveX = delta * (m_gameViewer.Location.X - m_cursor.X) / m_gameViewer.TileSize;
+            int camMoveY = delta * (m_gameViewer.Location.Y - m_cursor.Y) / m_gameViewer.TileSize;
+
+            // 추적값을 계산한 뒤에 타일크기를 바꿔야 제대로 된다.
+            
             if (delta < 0)
             {
                 if (m_gameViewer.TileSize > -delta + 1)
@@ -342,10 +350,6 @@ namespace ClickWar.Controller
                     m_gameViewer.TileSize += delta;
                 }
             }
-
-            // 확대/축소에 따라 화면도 보던 곳을 추적.
-            int camMoveX = delta * (m_gameViewer.Location.X - formSize.Width / 2) / m_gameViewer.TileSize;
-            int camMoveY = delta * (m_gameViewer.Location.Y - formSize.Height / 2) / m_gameViewer.TileSize;
 
             m_gameViewer.Location = new Point(m_gameViewer.Location.X + camMoveX, m_gameViewer.Location.Y + camMoveY);
         }

@@ -35,10 +35,10 @@ namespace ClickWar.Game
         //##################################################################################
 
         public delegate void GameEventDelegate(int x, int y, GameTile tile, string oldOwner);
-        public event GameEventDelegate WhenTileUnderAttack; // 타일이 공격받고 있을때
-        public event GameEventDelegate WhenTileCaptured; // 타일이 점령되었을때
-        public event GameEventDelegate WhenTileUpgraded; // 타일의 힘이 강해졌을때
-        public event GameEventDelegate WhenSignChanged;
+        public event GameEventDelegate WhenTileUnderAttack = new GameEventDelegate((x, y, tile, old) => { }); // 타일이 공격받고 있을때
+        public event GameEventDelegate WhenTileCaptured = new GameEventDelegate((x, y, tile, old) => { }); // 타일이 점령되었을때
+        public event GameEventDelegate WhenTileUpgraded = new GameEventDelegate((x, y, tile, old) => { }); // 타일의 힘이 강해졌을때
+        public event GameEventDelegate WhenSignChanged = new GameEventDelegate((x, y, tile, old) => { });
 
         //##################################################################################
 
@@ -664,6 +664,33 @@ namespace ClickWar.Game
                     }
                 }
             }
+        }
+
+        //##################################################################################
+
+        public void DeleteAllOf(Util.DBHelper db, string playerName)
+        {
+            List<Point> resetTileList = new List<Point>();
+
+            for (int w = 0; w < m_tileMap.GetLength(0); ++w)
+            {
+                for (int h = 0; h < m_tileMap.GetLength(1); ++h)
+                {
+                    var tile = m_tileMap[w, h];
+
+                    if (tile != null && tile.Owner == playerName)
+                    {
+                        tile.Owner = "";
+                        tile.Power = 0;
+                        tile.Sign = "";
+
+                        resetTileList.Add(new Point(w, h));
+                    }
+                }
+            }
+
+
+            this.UploadTileForeach(db, resetTileList.ToArray());
         }
     }
 }
