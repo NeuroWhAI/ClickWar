@@ -44,16 +44,25 @@ namespace ClickWar.Util
             key = new string(keyBytes);
 
             // 암호 복호화
-            string dbURI = EncoderDecoder.Decode("ee5I9DdM8/y/jNaPsKAojoB4k83aGvwUWUY6ksQe2Oap86cb17PE6rufJxXHPD1OOCTP56t4AbL0g3XSdCRM+w==",
-                Enumerable.Range(0, key.Length)
-                .Where(x => x % 2 == 0)
-                .Select(x => Convert.ToByte(key.Substring(x, 2), 16))
-                .ToArray());
+            string dbURI = EncoderDecoder.DecodeEx("ee5I9DdM8/y/jNaPsKAojoB4k83aGvwUWUY6ksQe2Oap86cb17PE6rufJxXHPD1OOCTP56t4AbL0g3XSdCRM+w==",
+                key);
 
             m_client = new MongoClient(dbURI);
-            //m_client = new MongoClient("mongodb://test:test@ds053305.mongolab.com:53305/click_war_test");
-            m_db = m_client.GetDatabase("click_war");
-            //m_db = m_client.GetDatabase("click_war_test");
+            int slashIdx = dbURI.LastIndexOf('/');
+            m_db = m_client.GetDatabase(dbURI.Substring(slashIdx + 1));
+
+
+            return 0;
+        }
+
+        public int Connect(string encryptedAddress, string key)
+        {
+            // 암호 복호화
+            string dbURI = EncoderDecoder.DecodeEx(encryptedAddress, key);
+
+            m_client = new MongoClient(dbURI);
+            int slashIdx = dbURI.LastIndexOf('/');
+            m_db = m_client.GetDatabase(dbURI.Substring(slashIdx + 1));
 
 
             return 0;
@@ -181,7 +190,7 @@ namespace ClickWar.Util
             col.ReplaceOne(filter, newDoc);
         }
 
-        public void UpdateDocumentArray(string collectionName, string documentName, string arrayProperty, string indexName,
+        public void UpdateArrayDocument(string collectionName, string documentName, string arrayProperty, string indexName,
             List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate)
         {
             var col = this.GetCollection(collectionName);
@@ -198,6 +207,71 @@ namespace ClickWar.Util
             }
 
             Task.WaitAll(m_updateTaskList.ToArray(), 700);
+        }
+
+        public void AddToDocumentArrayItem(string collectionName, string documentName, string arrayProperty, string indexName,
+            int index, string targetName, BsonValue delta)
+        {
+            var col = this.GetCollection(collectionName);
+
+            var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, index);
+            var update = Builders<BsonDocument>.Update.Inc(arrayProperty + "." + index + "." + targetName, delta);
+
+            var task = Task.Factory.StartNew(() => col.UpdateOne(filter, update));
+            task.Wait(700);
+        }
+
+        public void SetToDocumentArrayItem(string collectionName, string documentName, string arrayProperty, string indexName,
+            int index, string targetName, BsonValue newValue)
+        {
+            var col = this.GetCollection(collectionName);
+
+            var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, index);
+            var update = Builders<BsonDocument>.Update.Set(arrayProperty + "." + index + "." + targetName, newValue);
+
+            var task = Task.Factory.StartNew(() => col.UpdateOne(filter, update));
+            task.Wait(700);
+        }
+
+        /// <summary>
+        /// 문서 속 배열의 각 요소에 대해 변경작업을 수행합니다.
+        /// </summary>
+        /// <param name="collectionName">문서가 존재하는 컬렉션 이름.</param>
+        /// <param name="documentName">배열이 존재하는 문서의 이름.</param>
+        /// <param name="arrayProperty">배열의 이름.</param>
+        /// <param name="indexName">배열 속 각 요소를 구분하는 번호 이름.</param>
+        /// <param name="index">배열에서 변경을 적용할 요소의 번호.</param>
+        /// <param name="accessCheckName">변경가능한지 인증하기위해 사용되는 속성명.</param>
+        /// <param name="valueForCheckAccess">이 값과 accessCheckName의 값이 같아야 변경됨.</param>
+        /// <param name="changeList">(변경할 속성명, 새로운 값, true=Set/false=Inc)</param>
+        public void ChangeDocumentArrayManyItem(string collectionName, string documentName, string arrayProperty, string indexName,
+            int index, string accessCheckName, BsonValue valueForCheckAccess, Tuple<string, BsonValue, bool>[] changeList)
+        {
+            var col = this.GetCollection(collectionName);
+
+            var filter = Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + indexName, index);
+            filter = Builders<BsonDocument>.Filter.And(filter,
+                Builders<BsonDocument>.Filter.Eq(arrayProperty + "." + index + "." + accessCheckName, valueForCheckAccess));
+
+            UpdateDefinition<BsonDocument> update = null;
+            
+            foreach(var changeInfo in changeList)
+            {
+                UpdateDefinition<BsonDocument> newUpdate = null;
+
+                if (changeInfo.Item3)
+                    newUpdate = Builders<BsonDocument>.Update.Set(arrayProperty + "." + index + "." + changeInfo.Item1, changeInfo.Item2);
+                else
+                    newUpdate = Builders<BsonDocument>.Update.Inc(arrayProperty + "." + index + "." + changeInfo.Item1, changeInfo.Item2);
+
+                if (update == null)
+                    update = newUpdate;
+                else
+                    update = Builders<BsonDocument>.Update.Combine(update, newUpdate);
+            }
+
+            var task = Task.Factory.StartNew(() => col.UpdateOne(filter, update));
+            task.Wait(700);
         }
 
         public void UpdateDocumentArray(string collectionName, string documentName, string arrayProperty, string indexName,

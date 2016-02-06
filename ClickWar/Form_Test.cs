@@ -18,19 +18,9 @@ namespace ClickWar
             InitializeComponent();
 
 
-            /*RijndaelManaged aes = new RijndaelManaged();
-            aes.KeySize = 256;
-            aes.BlockSize = 128;
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
-            aes.GenerateKey();
-
-            string hexData = Util.EncoderDecoder.Encode("접속 주소", aes.Key);
-            this.textBox1.Text = hexData;
-
-            var chArr = BitConverter.ToString(aes.Key).Replace("-", "").ToCharArray();
-            Array.Reverse(chArr);
-            this.textBox2.Text = new string(chArr);*/
+            /*string key = "";
+            this.textBox1.Text = Util.EncoderDecoder.EncodeEx("mongodb://test:test@ds053305.mongolab.com:53305/click_war_test", out key);
+            this.textBox2.Text = key;*/
         }
     }
 }

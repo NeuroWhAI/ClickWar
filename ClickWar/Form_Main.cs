@@ -13,7 +13,7 @@ namespace ClickWar
 {
     public partial class Form_Main : Form, IStringReceiver
     {
-        public Form_Main(string playerName)
+        public Form_Main(string encryptedAddressDB, string key, string playerName)
         {
             // 더블 버퍼링
             this.SetStyle(ControlStyles.DoubleBuffer, true);
@@ -21,6 +21,16 @@ namespace ClickWar
             this.SetStyle(ControlStyles.UserPaint, true);
 
             InitializeComponent();
+
+
+            // 컨트롤러에 DB와 게임 모델, 뷰 등록
+            m_gameController.SetDB(m_db);
+            m_gameController.SetGameMap(m_gameMap);
+            m_gameController.SetGameViewer(m_gameViewer);
+
+
+            // 게임 시스템 초기화
+            ResetGame(encryptedAddressDB, key, playerName);
 
 
             // 마우스 휠 이벤트 등록
@@ -37,19 +47,8 @@ namespace ClickWar
             WhenPowerWayButtonClick(m_powerWayButtons[0]);
 
 
-            // 컨트롤러에 DB와 게임 모델, 뷰 등록
-            m_gameController.SetDB(m_db);
-            m_gameController.SetGameMap(m_gameMap);
-            m_gameController.SetGameViewer(m_gameViewer);
-
-
             // 창 이름 설정
             this.Text = "Click War - " + Application.ProductVersion;
-
-
-            // 플레이어 이름 등록
-            m_gameController.SetPlayerName(playerName);
-            this.label_playerName.Text = string.Format("\"{0}\"", playerName);
         }
 
         //##################################################################################
@@ -162,12 +161,13 @@ namespace ClickWar
 
         //##################################################################################
 
-        public void ResetGame(string playerName)
+        public void ResetGame(string encryptedAddressDB, string key, string playerName)
         {
-            this.label_playerName.Text = string.Format("\"{0}\"", playerName);
+            m_db.Connect(encryptedAddressDB, key);
 
 
             m_gameController.ResetGame(playerName, this.Size);
+            this.label_playerName.Text = string.Format("\"{0}\"", playerName);
 
 
             this.timer_update.Start();
@@ -185,8 +185,6 @@ namespace ClickWar
             // 폼이 게임 이벤트를 받을 수 있도록 등록.
             m_gameMap.WhenShutdownMessageChanged += WhenShutdownMessageChanged;
 
-
-            m_db.Connect();
 
             m_gameController.Init(this.Size);
 
@@ -306,6 +304,13 @@ namespace ClickWar
                     RemoveSign();
                     break;
             }
+
+            if (e.KeyValue >= '1' && e.KeyValue <= '9')
+            {
+                int viewNumber = e.KeyValue - '1';
+
+                m_gameController.SetModelGraphic(viewNumber);
+            }
         }
 
         //##################################################################################
@@ -378,10 +383,6 @@ namespace ClickWar
             this.timer_updateSlower.Stop();
 
 
-            // 채팅창 숨기기
-            this.HideChatForm();
-
-
             // 로그인 화면 보여주기.
             this.Hide();
 
@@ -394,55 +395,13 @@ namespace ClickWar
                 }
             }
 
-            Form_Login loginForm = new Form_Login();
-            loginForm.Show();
+            // 현재로서는 로그인폼이 존재하지않으면 프로그램을 종료하는게 좋다.
+            Application.Exit();
         }
 
         private void button_reColor_Click(object sender, EventArgs e)
         {
             m_gameController.ReColorAll();
-        }
-
-        private void button_chat_Click(object sender, EventArgs e)
-        {
-            ShowChatForm();
-        }
-
-        //##################################################################################
-
-        protected void ShowChatForm()
-        {
-            Form chatForm = null;
-
-            // 채팅 화면 보여주기.
-            foreach (Form form in Application.OpenForms)
-            {
-                if (form is Form_Chat)
-                {
-                    chatForm = form;
-
-                    break;
-                }
-            }
-
-            if (chatForm == null)
-                chatForm = new Form_Chat();
-            chatForm.Show();
-            chatForm.Location = new Point(this.Location.X + this.DisplayRectangle.Width + 2, this.Location.Y);
-        }
-
-        protected void HideChatForm()
-        {
-            // 채팅 화면 숨기기.
-            foreach (Form form in Application.OpenForms)
-            {
-                if (form is Form_Chat)
-                {
-                    form.Hide();
-
-                    return;
-                }
-            }
         }
 
         //##################################################################################

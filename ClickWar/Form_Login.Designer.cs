@@ -91,7 +91,7 @@
             this.button_exit.Name = "button_exit";
             this.button_exit.Size = new System.Drawing.Size(149, 33);
             this.button_exit.TabIndex = 5;
-            this.button_exit.Text = "Exit";
+            this.button_exit.Text = "Cancel";
             this.button_exit.UseVisualStyleBackColor = true;
             this.button_exit.Click += new System.EventHandler(this.button_exit_Click);
             // 

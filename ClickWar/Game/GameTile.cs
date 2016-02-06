@@ -30,10 +30,10 @@ namespace ClickWar.Game
 
                 lock(m_indexLock)
                 {
-                    int result = m_index - m_indexKey;
+                    int result = Util.Utility.DecodeValue(m_index, m_indexKey);
 
-                    if (result == m_realIndex)
-                        temp = m_realIndex;
+                    if (result == -m_realIndex)
+                        temp = -m_realIndex;
                     else
                         throw new Exception("Fuck you hacker.");
                 }
@@ -44,9 +44,8 @@ namespace ClickWar.Game
             {
                 lock(m_indexLock)
                 {
-                    m_realIndex = value;
-                    m_indexKey = Util.Utility.Random.Next(128, 1024);
-                    m_index = value + m_indexKey;
+                    m_realIndex = -value;
+                    m_index = Util.Utility.EncodeValue(value, out m_indexKey);
                 }
 
                 this.IsLastVersion = false;
@@ -91,10 +90,10 @@ namespace ClickWar.Game
 
                 lock(m_powerLock)
                 {
-                    int result = m_power - m_powerKey;
+                    int result = Util.Utility.DecodeValue(m_power, m_powerKey);
 
-                    if (result == m_realPower)
-                        temp = m_realPower;
+                    if (result == -m_realPower)
+                        temp = -m_realPower;
                     else
                         throw new Exception("Fuck you hacker.");
                 }
@@ -105,9 +104,8 @@ namespace ClickWar.Game
             {
                 lock(m_powerLock)
                 {
-                    m_realPower = value;
-                    m_powerKey = Util.Utility.Random.Next(128, 1024);
-                    m_power = value + m_powerKey;
+                    m_realPower = -value;
+                    m_power = Util.Utility.EncodeValue(value, out m_powerKey);
                 }
 
                 this.IsLastVersion = false;
@@ -122,7 +120,7 @@ namespace ClickWar.Game
 
                 lock (m_signLock)
                 {
-                    temp = m_sign;
+                    temp = new string(m_sign.Reverse().ToArray());
                 }
 
                 return temp;
@@ -131,7 +129,8 @@ namespace ClickWar.Game
             {
                 lock(m_signLock)
                 {
-                    m_sign = value;
+                    m_realSign = value;
+                    m_sign = new string(value.Reverse().ToArray());
                 }
 
                 this.IsLastVersion = false;
@@ -140,16 +139,16 @@ namespace ClickWar.Game
 
         //##################################################################################
 
-        protected int m_index = -1, m_indexKey = Util.Utility.Random.Next(1024), m_realIndex = -1;
+        protected int m_index = -1, m_indexKey = 0, m_realIndex = -1;
         protected readonly object m_indexLock = new object();
 
         protected string m_owner = "", m_realOwner = "";
         protected readonly object m_ownerLock = new object();
 
-        protected int m_power = 0, m_powerKey = Util.Utility.Random.Next(1024), m_realPower = 0;
+        protected int m_power = 0, m_powerKey = 0, m_realPower = 0;
         protected readonly object m_powerLock = new object();
 
-        protected string m_sign = "";
+        protected string m_sign = "", m_realSign = "";
         protected readonly object m_signLock = new object();
 
         //##################################################################################
@@ -165,6 +164,9 @@ namespace ClickWar.Game
         }
 
         public bool IsLastVersion
+        { get; set; } = false;
+
+        public bool WasIgnored
         { get; set; } = false;
 
         //##################################################################################

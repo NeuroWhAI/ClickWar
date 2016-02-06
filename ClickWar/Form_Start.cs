@@ -22,8 +22,15 @@ namespace ClickWar
 
         //##################################################################################
 
+        protected Util.DBHelper m_db = new Util.DBHelper();
+
+        //##################################################################################
+
         private void Form_Start_Load(object sender, EventArgs e)
         {
+            m_db.Connect();
+
+
             this.timer_update.Start();
         }
 
@@ -39,14 +46,15 @@ namespace ClickWar
 
                     this.timer_update.Stop();
 
-                    
-                    Util.DBHelper db = new Util.DBHelper();
-                    db.Connect();
 
-                    var noticeDoc = db.GetDocument("Server", "Notice");
+                    CheckUpdate();
+                    
+
+                    // 일반공지 확인 후 표시
+                    var noticeDoc = m_db.GetDocument("Server", "Notice");
                     if (noticeDoc == null)
                     {
-                        noticeDoc = db.CreateDocument("Server", "Notice",
+                        noticeDoc = m_db.CreateDocument("Server", "Notice",
                             new MongoDB.Bson.BsonDocument()
                             {
                                 { "Title", "" },
@@ -66,10 +74,94 @@ namespace ClickWar
                     }
 
 
-                    Form_Login loginForm = new Form_Login();
-                    loginForm.Show();
+                    // 서버선택 화면으로 넘어감
+                    var serverMapForm = new Form_ServerMap();
+                    serverMapForm.Show();
 
                     this.Hide();
+                }
+            }
+        }
+
+        //##################################################################################
+
+        protected void CheckUpdate()
+        {
+            // 업데이트 확인
+            string[] versionData = new string[]
+            {
+                "", "", "", ""
+            };
+
+            int index = 0;
+
+            foreach (char ch in Application.ProductVersion)
+            {
+                if (ch == '.')
+                {
+                    ++index;
+
+                    if (index >= 4)
+                        break;
+                }
+                else
+                {
+                    versionData[index] += ch;
+                }
+            }
+
+            var versionDoc = m_db.GetDocument("Publish", "Publish");
+            if (versionDoc == null)
+            {
+                versionDoc = m_db.CreateDocument("Publish", "Publish",
+                    new MongoDB.Bson.BsonDocument
+                    {
+                        { "v0", versionData[0] },
+                        { "v1", versionData[1] },
+                        { "v2", versionData[2] },
+                        { "v3", versionData[3] },
+                        { "Download", "http://blog.naver.com/tlsehdgus321" }
+                    });
+            }
+            else
+            {
+                bool updateExist = false;
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    int thisVersion = int.Parse(versionData[i]);
+                    int serverVersion = int.Parse(versionDoc["v" + i].AsString);
+
+                    if (thisVersion < serverVersion)
+                    {
+                        updateExist = true;
+
+                        break;
+                    }
+                    else if (thisVersion > serverVersion)
+                    {
+                        break;
+                    }
+                }
+
+                if (updateExist)
+                {
+                    var dlgResult = MessageBox.Show("업데이트가 있습니다.\n다운로드 하시겠습니까?", "Info",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                    if (dlgResult == DialogResult.Yes)
+                    {
+                        System.Diagnostics.Process.Start(versionDoc["Download"].AsString);
+
+                        Application.Exit();
+                    }
+                    else
+                    {
+                        MessageBox.Show("최신버전의 클라이언트로만 접속할 수 있습니다.", "Error!",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                        Application.Exit();
+                    }
                 }
             }
         }

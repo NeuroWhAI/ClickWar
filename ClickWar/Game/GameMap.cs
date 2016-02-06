@@ -229,8 +229,11 @@ namespace ClickWar.Game
                 string oldSign = tile.Sign;
 
                 // 로컬의 타일이 DB보다 더 최신인경우 한번 건너뜀 (롤백 감소)
-                if (tile.IsLastVersion)
+                if (tile.IsLastVersion || tile.WasIgnored)
                 {
+                    tile.WasIgnored = false;
+
+
                     // 타일 갱신
                     tile.FromBsonDocument(tileArray[index].AsBsonDocument);
 
@@ -249,6 +252,7 @@ namespace ClickWar.Game
                 }
                 else
                 {
+                    tile.WasIgnored = true;
                     tile.IsLastVersion = true;
                 }
             }
@@ -292,7 +296,7 @@ namespace ClickWar.Game
 
 
             // 동기화
-            db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
+            db.UpdateArrayDocument("Tiles", "Tiles", "List", "Index",
                 new List<KeyValuePair<int, BsonValue>>()
                 {
                     new KeyValuePair<int, BsonValue>(tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
@@ -303,7 +307,7 @@ namespace ClickWar.Game
             return 0;
         }
 
-        protected int UploadTileForeach(Util.DBHelper db, System.Drawing.Point[] indexList)
+        protected int UploadTileForeach(Util.DBHelper db, Point[] indexList)
         {
             List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate = new List<KeyValuePair<int, BsonValue>>();
 
@@ -325,34 +329,75 @@ namespace ClickWar.Game
             }
 
             // 동기화
-            db.UpdateDocumentArray("Tiles", "Tiles", "List", "Index",
+            db.UpdateArrayDocument("Tiles", "Tiles", "List", "Index",
                 indexItemListNeedUpdate);
 
 
             return 0;
         }
 
+        protected void UploadTileOwnerSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
+            string oldOwner, string newOwner)
+        {
+            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
+                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+                "Owner", oldOwner,
+                new Tuple<string, BsonValue, bool>[] {
+                    new Tuple<string, BsonValue, bool>("Owner", newOwner, true)
+                    });
+        }
+
+        protected void UploadTilePowerSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
+            string owner, int deltaPower)
+        {
+            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
+                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+                "Owner", owner,
+                new Tuple<string, BsonValue, bool>[] {
+                    new Tuple<string, BsonValue, bool>("Power", deltaPower, false)
+                    });
+        }
+
+        protected void UploadTileSignSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
+            string owner, string newSign)
+        {
+            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
+                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+                "Owner", owner,
+                new Tuple<string, BsonValue, bool>[] {
+                    new Tuple<string, BsonValue, bool>("Sign", newSign, true)
+                    });
+        }
+
+        protected void UploadTileSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
+            string oldOwner, string newOwner, int deltaPower, string newSign)
+        {
+            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
+                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+                "Owner", oldOwner,
+                new Tuple<string, BsonValue, bool>[] {
+                    new Tuple<string, BsonValue, bool>("Owner", newOwner, true),
+                    new Tuple<string, BsonValue, bool>("Power", deltaPower, true),
+                    new Tuple<string, BsonValue, bool>("Sign", newSign, true)
+                    });
+        }
+
         //##################################################################################
 
         public int AddPowerAt(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex, int delta)
         {
-            // 타일맵 범위 초과시 아무것도 안함.
-            if (tileWidthIndex < 0 || tileWidthIndex >= m_tileMap.GetLength(0)
-                ||
-                tileHeightIndex < 0 || tileHeightIndex >= m_tileMap.GetLength(1))
-            {
-                return -1;
-            }
+            var tile = this.GetTileAt(tileWidthIndex, tileHeightIndex);
+            if (tile == null) return -1;
+
 
             // Power 증가.
-            m_tileMap[tileWidthIndex, tileHeightIndex].Power += delta;
+            tile.Power += delta;
 
             // 동기화
-            UploadTileAt(db, tileWidthIndex, tileHeightIndex);
+            UploadTilePowerSafely(db, tileWidthIndex, tileHeightIndex, tile.Owner, delta);
 
 
             // 이벤트 발생
-            var tile = this.GetTileAt(tileWidthIndex, tileHeightIndex);
             if (delta > 0)
             {
                 WhenTileUpgraded(tileWidthIndex, tileHeightIndex,
@@ -409,6 +454,8 @@ namespace ClickWar.Game
             // 공격
             tile.Power -= attackPower;
 
+            UploadTilePowerSafely(db, tileWidthIndex, tileHeightIndex, tile.Owner, -attackPower);
+
 
             // 이벤트 발생
             if (attackPower > 0)
@@ -428,7 +475,10 @@ namespace ClickWar.Game
                     &&
                     nearTile.Owner == playerName)
                 {
-                    nearTile.Power -= nearTile.Power / 2;
+                    int decrease = nearTile.Power / 2;
+                    nearTile.Power -= decrease;
+
+                    UploadTilePowerSafely(db, nearX[i], nearY[i], nearTile.Owner, -decrease);
                 }
             }
 
@@ -439,10 +489,14 @@ namespace ClickWar.Game
 
                 // 점령
                 tile.Owner = playerName;
-                tile.Power = Math.Abs(tile.Power) + 2;
+                int newPower = Math.Abs(tile.Power) + 2;
+                tile.Power = newPower;
                 tile.Sign = "";
 
                 bBuild = true;
+
+                UploadTileSafely(db, tileWidthIndex, tileHeightIndex,
+                    oldOwner, playerName, newPower, "");
 
 
                 // 이벤트 발생
@@ -451,14 +505,14 @@ namespace ClickWar.Game
             }
 
             // 변경사항 업로드
-            this.UploadTileForeach(db, new Point[]
+            /*this.UploadTileForeach(db, new Point[]
             {
                 new Point(nearX[0], nearY[0]),
                 new Point(nearX[1], nearY[1]),
                 new Point(nearX[2], nearY[2]),
                 new Point(nearX[3], nearY[3]),
                 new Point(tileWidthIndex, tileHeightIndex),
-            });
+            });*/
 
 
             return bBuild;
@@ -503,11 +557,13 @@ namespace ClickWar.Game
                 // 힘의 이동이 있었으면 변경사항 업로드.
                 if (cost > 0)
                 {
-                    this.UploadTileForeach(db, new Point[]
+                    UploadTilePowerSafely(db, dirX[dirNum], dirY[dirNum], targetTile.Owner, cost);
+                    UploadTilePowerSafely(db, tileWidthIndex, tileHeightIndex, tile.Owner, -cost);
+                    /*this.UploadTileForeach(db, new Point[]
                     {
                         new Point(dirX[dirNum], dirY[dirNum]),
                         new Point(tileWidthIndex, tileHeightIndex),
-                    });
+                    });*/
 
 
                     // 이벤트 발생
@@ -530,10 +586,13 @@ namespace ClickWar.Game
                     string oldOwner = tile.Owner;
 
                     tile.Owner = playerName;
-                    tile.Power = buildCost - tile.Power;
+                    int newPower = buildCost - tile.Power;
+                    tile.Power = newPower;
                     tile.Sign = "";
 
-                    this.UploadTileAt(db, widthIndex, heightIndex);
+                    UploadTileSafely(db, widthIndex, heightIndex,
+                        oldOwner, playerName, newPower, "");
+                    //this.UploadTileAt(db, widthIndex, heightIndex);
 
 
                     // 이벤트 발생
@@ -561,7 +620,9 @@ namespace ClickWar.Game
                         playerName);
 
 
-                this.UploadTileAt(db, widthIndex, heightIndex);
+                UploadTileSignSafely(db, widthIndex, heightIndex,
+                    tile.Owner, sign);
+                //this.UploadTileAt(db, widthIndex, heightIndex);
             }
         }
 

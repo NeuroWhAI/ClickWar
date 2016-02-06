@@ -65,5 +65,18 @@ namespace ClickWar.Util
 
             return ipList.ToArray();
         }
+
+        //##################################################################################
+
+        public static int EncodeValue(int value, out int key)
+        {
+            key = Random.Next(128, 1024);
+            return ((value ^ key) - 1);
+        }
+
+        public static int DecodeValue(int value, int key)
+        {
+            return ((value + 1) ^ key);
+        }
     }
 }

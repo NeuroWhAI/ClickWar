@@ -32,6 +32,10 @@ namespace ClickWar.Controller
 
         //##################################################################################
 
+        protected View.ModelGraphic m_modelDrawer = new View.ModelGraphic();
+
+        //##################################################################################
+
         protected Stopwatch m_clickTimer = new Stopwatch();
         protected bool m_bCanClick = true;
         protected int m_clickCount = 0, m_oldClickCount = 0;
@@ -81,11 +85,8 @@ namespace ClickWar.Controller
             m_gameMap.WhenTileUnderAttack += m_gameViewer.WhenTileUnderAttack;
             m_gameMap.WhenTileUpgraded += m_gameViewer.WhenTileUpgraded;
             m_gameMap.WhenSignChanged += m_gameViewer.WhenSignChanged;
-
-
-            m_db.Connect();
-
-            //m_gameViewer.GameMap = m_gameMap;
+            
+            
             m_gameViewer.Location = new Point(12, 76);
             m_gameViewer.TileSize = 48;
 
@@ -103,12 +104,17 @@ namespace ClickWar.Controller
 
         public void ResetGame(string playerName, Size formSize)
         {
-            m_playerName = playerName;
+            SetPlayerName(playerName);
             
 
             m_gameMap.SyncAll(m_db);
 
+            m_gameViewer.Location = new Point(12, 76);
             m_gameViewer.TileSize = 48;
+
+
+            // 동기화 함으로서 발생하는 이벤트와 이펙트 제거
+            m_gameViewer.ClearEffectAndEvent();
 
 
             // 화면을 플레이어 영토로 이동
@@ -252,9 +258,31 @@ namespace ClickWar.Controller
 
         //##################################################################################
 
+        public void SetModelGraphic(int type)
+        {
+            switch (type)
+            {
+                case 0:
+                    m_modelDrawer = new View.ModelGraphic();
+                    break;
+
+                case 1:
+                    m_modelDrawer = new View.ModelGraphics.ColoringPlayerTileGraphic();
+                    break;
+
+                case 2:
+                    m_modelDrawer = new View.ModelGraphics.SameEnemyColorGraphic();
+                    break;
+
+                case 3:
+                    m_modelDrawer = new View.ModelGraphics.NotDrawSignGraphic();
+                    break;
+            }
+        }
+
         public void DrawGame(Graphics g, Size formSize)
         {
-            m_gameViewer.DrawMap(g, m_gameMap, m_cursor, m_playerName, m_clickCount, formSize);
+            m_gameViewer.DrawMap(g, m_modelDrawer, m_gameMap, m_cursor, m_playerName, m_clickCount, formSize);
         }
 
         //##################################################################################

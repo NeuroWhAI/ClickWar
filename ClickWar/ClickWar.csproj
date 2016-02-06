@@ -67,17 +67,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controller\GameController.cs" />
-    <Compile Include="Form_Chat.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Form_Chat.Designer.cs">
-      <DependentUpon>Form_Chat.cs</DependentUpon>
-    </Compile>
     <Compile Include="Form_Login.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Form_Login.Designer.cs">
       <DependentUpon>Form_Login.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form_ServerMap.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_ServerMap.Designer.cs">
+      <DependentUpon>Form_ServerMap.cs</DependentUpon>
     </Compile>
     <Compile Include="Form_Sign.cs">
       <SubType>Form</SubType>
@@ -115,14 +115,18 @@
     <Compile Include="View\CircleEffect.cs" />
     <Compile Include="View\GameEventViewer.cs" />
     <Compile Include="View\GameViewer.cs" />
-    <EmbeddedResource Include="Form_Chat.resx">
-      <DependentUpon>Form_Chat.cs</DependentUpon>
-    </EmbeddedResource>
+    <Compile Include="View\ModelGraphic.cs" />
+    <Compile Include="View\ModelGraphics\NotDrawSignGraphic.cs" />
+    <Compile Include="View\ModelGraphics\SameEnemyColorGraphic.cs" />
+    <Compile Include="View\ModelGraphics\ColoringPlayerTileGraphic.cs" />
     <EmbeddedResource Include="Form_Login.resx">
       <DependentUpon>Form_Login.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form_Main.resx">
       <DependentUpon>Form_Main.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_ServerMap.resx">
+      <DependentUpon>Form_ServerMap.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form_Sign.resx">
       <DependentUpon>Form_Sign.cs</DependentUpon>

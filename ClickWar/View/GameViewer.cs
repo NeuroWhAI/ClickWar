@@ -158,7 +158,7 @@ namespace ClickWar.View
 
         //##################################################################################
 
-        public int DrawMap(Graphics g, Game.GameMap gameMap, Point cursor,
+        public int DrawMap(Graphics g, ModelGraphic modelGraphic, Game.GameMap gameMap, Point cursor,
             string playerName, int clickCount, Size screenSize)
         {
             if (gameMap == null)
@@ -193,18 +193,19 @@ namespace ClickWar.View
                     if (tile != null)
                     {
                         // 타일 색 채우기
-                        Brush fillColor = null;
+                        Brush fillBrush = null;
                         bool needDispose = false;
 
                         if (w == m_focusedCoord.X && h == m_focusedCoord.Y)
                         {
                             // 포커스된 타일
-                            fillColor = m_piaColor;
+                            fillBrush = m_piaColor;
                         }
                         else if (tile.Owner == playerName)
                         {
                             // 아군 지역
-                            fillColor = Brushes.GreenYellow;
+                            fillBrush = modelGraphic.GetBrushOfFriendTile(tile, Color.GreenYellow,
+                                out needDispose);
                         }
                         else if (tile.Owner.Length > 0)
                         {
@@ -216,25 +217,17 @@ namespace ClickWar.View
                                 m_playerColor.Add(tile.Owner, Util.Utility.GetRandomColor());
                             }
 
-                            Color color = m_playerColor[tile.Owner];
-
-                            int alpha = 120 + tile.Power / 2;
-                            if (alpha < 120) alpha = 120;
-                            else if (alpha > 255) alpha = 255;
-
-                            color = Color.FromArgb(color.ToArgb() & 0x00ffffff | (alpha << 24));
-
-                            fillColor = new SolidBrush(color);
-                            needDispose = true;
+                            fillBrush = modelGraphic.GetBrushOfEnemyTile(tile, m_playerColor[tile.Owner],
+                                out needDispose);
                         }
 
-                        if (fillColor != null)
+                        if (fillBrush != null)
                         {
-                            g.FillRectangle(fillColor, Location.X + w * TileSize,
+                            g.FillRectangle(fillBrush, Location.X + w * TileSize,
                                 Location.Y + h * TileSize, TileSize, TileSize);
 
                             if (needDispose)
-                                fillColor.Dispose();
+                                fillBrush.Dispose();
                         }
 
 
@@ -348,7 +341,7 @@ namespace ClickWar.View
                             continue;
 
 
-                        DrawSign(g, tile, w, h);
+                        DrawSign(g, modelGraphic, tile, w, h);
                     }
                 }
             }
@@ -381,26 +374,15 @@ namespace ClickWar.View
             {
                 var tile = gameMap.GetTileAt(m_focusedCoord.X, m_focusedCoord.Y);
 
-                DrawSign(g, tile, m_focusedCoord.X, m_focusedCoord.Y);
+                DrawSign(g, modelGraphic, tile, m_focusedCoord.X, m_focusedCoord.Y);
 
-                string infoText;
-
-                if (tile != null && tile.HaveOwner)
-                    infoText = string.Format("Owner: {0}\nPower: {1}", tile.Owner, tile.Power);
-                else
-                    infoText = "[Empty]";
-
-                g.DrawString(infoText, m_font, Brushes.Black,
-                    cursor.X + 16.0f, cursor.Y - 6.0f);
+                modelGraphic.DrawTileInfoSimply(g, m_font, tile,
+                    cursor.X + 16, cursor.Y - 6);
             }
 
 
             // 클릭 카운트 표시
-            using (Pen pen = new Pen(Color.DarkBlue, 3.0f))
-            {
-                g.DrawPie(pen, cursor.X - 16.0f, cursor.Y - 16.0f, 32.0f, 32.0f,
-                    65.0f, clickCount * 36.0f);
-            }
+            modelGraphic.DrawClickCount(g, clickCount, cursor.X - 16, cursor.Y - 16);
 
 
             return 0;
@@ -433,38 +415,14 @@ namespace ClickWar.View
                 });
         }
 
-        protected void DrawSign(Graphics g, Game.GameTile tile, int w, int h)
+        protected void DrawSign(Graphics g, ModelGraphic modelGraphic, Game.GameTile tile, int w, int h)
         {
             if (tile != null && tile.HaveSign)
             {
                 int locationX = Location.X + w * TileSize + TileSize / 2;
                 int locationY = Location.Y + h * TileSize + TileSize / 2;
 
-                var boxSize = TextRenderer.MeasureText(tile.Sign, m_font);
-                int boxWidth = boxSize.Width + 4;
-                int boxHeight = boxSize.Height + 8;
-
-                g.FillPie(Brushes.SandyBrown,
-                    locationX - 16,
-                    locationY - 14,
-                    32,
-                    28,
-                    270 - 20,
-                    40);
-
-                g.FillRectangle(Brushes.SandyBrown,
-                    locationX - boxWidth / 2,
-                    locationY - boxHeight - 8,
-                    boxWidth,
-                    boxHeight);
-
-                g.DrawString(tile.Sign, m_font, Brushes.Black,
-                    locationX,
-                    locationY - boxHeight - 4,
-                    new StringFormat()
-                    {
-                        Alignment = StringAlignment.Center
-                    });
+                modelGraphic.DrawSign(g, m_font, tile.Sign, locationX, locationY);
             }
         }
 

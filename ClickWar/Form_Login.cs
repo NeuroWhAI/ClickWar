@@ -13,9 +13,12 @@ namespace ClickWar
 {
     public partial class Form_Login : Form
     {
-        public Form_Login()
+        public Form_Login(string encryptedAddressDB, string key)
         {
             InitializeComponent();
+
+
+            ResetDB(encryptedAddressDB, key);
 
 
             this.Text = "Click War - " + Application.ProductVersion;
@@ -24,93 +27,20 @@ namespace ClickWar
         //##################################################################################
 
         protected Util.DBHelper m_db = new Util.DBHelper();
+        protected string m_encryptedAddress, m_key;
 
         //##################################################################################
 
+        public void ResetDB(string encryptedAddressDB, string key)
+        {
+            m_encryptedAddress = encryptedAddressDB;
+            m_key = key;
+
+            m_db.Connect(encryptedAddressDB, key);
+        }
+
         private void Form_Login_Load(object sender, EventArgs e)
         {
-            m_db.Connect();
-
-
-            // 업데이트 확인
-            string[] versionData = new string[]
-            {
-                "", "", "", ""
-            };
-
-            int index = 0;
-
-            foreach (char ch in Application.ProductVersion)
-            {
-                if (ch == '.')
-                {
-                    ++index;
-
-                    if (index >= 4)
-                        break;
-                }
-                else
-                {
-                    versionData[index] += ch;
-                }
-            }
-
-            var versionDoc = m_db.GetDocument("Publish", "Publish");
-            if (versionDoc == null)
-            {
-                versionDoc = m_db.CreateDocument("Publish", "Publish",
-                    new MongoDB.Bson.BsonDocument
-                    {
-                        { "v0", versionData[0] },
-                        { "v1", versionData[1] },
-                        { "v2", versionData[2] },
-                        { "v3", versionData[3] },
-                        { "Download", "http://blog.naver.com/tlsehdgus321" }
-                    });
-            }
-            else
-            {
-                bool updateExist = false;
-
-                for (int i = 0; i < 4; ++i)
-                {
-                    int thisVersion = int.Parse(versionData[i]);
-                    int serverVersion = int.Parse(versionDoc["v" + i].AsString);
-
-                    if (thisVersion < serverVersion)
-                    {
-                        updateExist = true;
-
-                        break;
-                    }
-                    else if (thisVersion > serverVersion)
-                    {
-                        break;
-                    }
-                }
-
-                if (updateExist)
-                {
-                    var dlgResult = MessageBox.Show("업데이트가 있습니다.\n다운로드 하시겠습니까?", "Info",
-                        MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-                    if (dlgResult == DialogResult.Yes)
-                    {
-                        System.Diagnostics.Process.Start(versionDoc["Download"].AsString);
-
-                        Application.Exit();
-                    }
-                    else
-                    {
-                        MessageBox.Show("최신버전의 클라이언트로만 접속할 수 있습니다.", "Error!",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                        Application.Exit();
-                    }
-                }
-            }
-
-
             // 자동 로그인 확인
             this.checkBox_autoLogin.Checked = Util.RegistryHelper.GetDataAsBool("AutoLoginFlag", false);
             if (this.checkBox_autoLogin.Checked)
@@ -167,7 +97,26 @@ namespace ClickWar
 
         private void button_exit_Click(object sender, EventArgs e)
         {
-            Application.Exit();
+            if (this.button_login.Enabled)
+            {
+                this.Hide();
+
+                foreach (Form form in Application.OpenForms)
+                {
+                    if (form is Form_ServerMap)
+                    {
+                        form.Show();
+                        return;
+                    }
+                }
+
+                var serverMapForm = new Form_ServerMap();
+                serverMapForm.Show();
+            }
+            else
+            {
+                Application.Exit();
+            }
         }
 
         //##################################################################################
@@ -225,13 +174,13 @@ namespace ClickWar
             {
                 if (form is Form_Main)
                 {
-                    ((Form_Main)form).ResetGame(this.textBox_name.Text);
+                    ((Form_Main)form).ResetGame(m_encryptedAddress, m_key, this.textBox_name.Text);
                     form.Show();
                     return;
                 }
             }
 
-            Form_Main mainForm = new Form_Main(this.textBox_name.Text);
+            Form_Main mainForm = new Form_Main(m_encryptedAddress, m_key, this.textBox_name.Text);
             mainForm.Show();
         }
 
