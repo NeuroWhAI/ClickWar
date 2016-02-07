@@ -35,7 +35,7 @@ namespace ClickWar.Game
                     if (result == -m_realIndex)
                         temp = -m_realIndex;
                     else
-                        throw new Exception("Fuck you hacker.");
+                        System.Windows.Forms.Application.Exit();
                 }
 
                 return temp;
@@ -56,7 +56,7 @@ namespace ClickWar.Game
         {
             get
             {
-                string temp;
+                string temp = string.Empty;
 
                 lock(m_ownerLock)
                 {
@@ -65,7 +65,7 @@ namespace ClickWar.Game
                     if (result == m_realOwner)
                         temp = m_realOwner;
                     else
-                        throw new Exception("Fuck you hacker.");
+                        System.Windows.Forms.Application.Exit();
                 }
 
                 return temp;
@@ -95,8 +95,9 @@ namespace ClickWar.Game
                     if (result == -m_realPower)
                         temp = -m_realPower;
                     else
-                        throw new Exception("Fuck you hacker.");
+                        System.Windows.Forms.Application.Exit();
                 }
+
 
                 return temp;
             }

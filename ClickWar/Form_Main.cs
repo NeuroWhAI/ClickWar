@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
+using System.Diagnostics;
 
 namespace ClickWar
 {
@@ -50,6 +51,11 @@ namespace ClickWar
             // 창 이름 설정
             this.Text = "Click War - " + Application.ProductVersion;
         }
+
+        //##################################################################################
+
+        protected DateTime m_prevTime = DateTime.Now;
+        protected Stopwatch m_hackCheckTimer = new Stopwatch();
 
         //##################################################################################
 
@@ -170,6 +176,10 @@ namespace ClickWar
             this.label_playerName.Text = string.Format("\"{0}\"", playerName);
 
 
+            m_prevTime = DateTime.Now;
+            m_hackCheckTimer.Restart();
+
+
             this.timer_update.Start();
             this.timer_updateSlower.Start();
         }
@@ -223,6 +233,16 @@ namespace ClickWar
 
         private void timer_updateSlower_Tick(object sender, EventArgs e)
         {
+            // 배속 핵 감지
+            var delay = m_hackCheckTimer.ElapsedMilliseconds;
+            var realDelay = DateTime.Now - m_prevTime;
+            if ((realDelay.TotalMilliseconds + delay) / 2 > this.timer_updateSlower.Interval + 100)
+            {
+                Application.Exit();
+                return;
+            }
+
+
             // 동기화
             AddThreadWork(() => m_gameController.SyncGame(this.Size), 2); // 비동기 작업
 
@@ -234,6 +254,10 @@ namespace ClickWar
 
             // 랭킹 갱신
             UpdateRank();
+
+
+            m_prevTime = DateTime.Now;
+            m_hackCheckTimer.Restart();
         }
 
         //##################################################################################

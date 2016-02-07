@@ -18,9 +18,11 @@ namespace ClickWar
             InitializeComponent();
 
 
+#if DEBUG
             /*string key = "";
-            this.textBox1.Text = Util.EncoderDecoder.EncodeEx("mongodb://test:test@ds053305.mongolab.com:53305/click_war_test", out key);
+            this.textBox1.Text = Util.EncoderDecoder.EncodeEx("mongodb://hacker:fuckyou231@ds053295.mongolab.com:53295/click_war_hack", out key);
             this.textBox2.Text = key;*/
+#endif
         }
     }
 }

@@ -190,7 +190,7 @@ namespace ClickWar.Util
             col.ReplaceOne(filter, newDoc);
         }
 
-        public void UpdateArrayDocument(string collectionName, string documentName, string arrayProperty, string indexName,
+        public void UpdateArrayDocument(string collectionName, string arrayProperty, string indexName,
             List<KeyValuePair<int, BsonValue>> indexItemListNeedUpdate)
         {
             var col = this.GetCollection(collectionName);
@@ -209,7 +209,7 @@ namespace ClickWar.Util
             Task.WaitAll(m_updateTaskList.ToArray(), 700);
         }
 
-        public void AddToDocumentArrayItem(string collectionName, string documentName, string arrayProperty, string indexName,
+        public void AddToDocumentArrayItem(string collectionName, string arrayProperty, string indexName,
             int index, string targetName, BsonValue delta)
         {
             var col = this.GetCollection(collectionName);
@@ -221,7 +221,7 @@ namespace ClickWar.Util
             task.Wait(700);
         }
 
-        public void SetToDocumentArrayItem(string collectionName, string documentName, string arrayProperty, string indexName,
+        public void SetToDocumentArrayItem(string collectionName, string arrayProperty, string indexName,
             int index, string targetName, BsonValue newValue)
         {
             var col = this.GetCollection(collectionName);
@@ -244,7 +244,7 @@ namespace ClickWar.Util
         /// <param name="accessCheckName">변경가능한지 인증하기위해 사용되는 속성명.</param>
         /// <param name="valueForCheckAccess">이 값과 accessCheckName의 값이 같아야 변경됨.</param>
         /// <param name="changeList">(변경할 속성명, 새로운 값, true=Set/false=Inc)</param>
-        public void ChangeDocumentArrayManyItem(string collectionName, string documentName, string arrayProperty, string indexName,
+        public void ChangeDocumentArrayManyItem(string collectionName, string arrayProperty, string indexName,
             int index, string accessCheckName, BsonValue valueForCheckAccess, Tuple<string, BsonValue, bool>[] changeList)
         {
             var col = this.GetCollection(collectionName);
@@ -274,7 +274,7 @@ namespace ClickWar.Util
             task.Wait(700);
         }
 
-        public void UpdateDocumentArray(string collectionName, string documentName, string arrayProperty, string indexName,
+        public void UpdateDocumentArray(string collectionName, string arrayProperty, string indexName,
             int index, BsonValue newValue)
         {
             var col = this.GetCollection(collectionName);

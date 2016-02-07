@@ -78,5 +78,18 @@ namespace ClickWar.Util
         {
             return ((value + 1) ^ key);
         }
+
+        //##################################################################################
+
+        public static int TwoDToOneD<T>(int x, int y, T[,] twoDArr)
+        {
+            return (x * twoDArr.GetLength(1) + y);
+        }
+
+        public static void OneDToTwoD<T>(int oneDIndex, T[,] twoDArr, out int x, out int y)
+        {
+            x = oneDIndex / twoDArr.GetLength(1);
+            y = oneDIndex % twoDArr.GetLength(1);
+        }
     }
 }

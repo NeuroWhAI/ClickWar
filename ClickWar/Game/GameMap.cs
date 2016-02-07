@@ -128,7 +128,7 @@ namespace ClickWar.Game
             // 타일맵이 없거나 DB의 맵 크기와 다르면 새로 생성한다.
             if (m_tileMap == null
                 ||
-                width != m_tileMap.GetLength(0) || height != m_tileMap.GetLength(1))
+                width != this.Width || height != this.Height)
             {
                 m_tileMap = new GameTile[width, height];
 
@@ -201,12 +201,12 @@ namespace ClickWar.Game
 
                 // DB타일의 정보를 인덱스에 해당하는 타일에 설정.
                 for (int w = startIdx.X;
-                    w <= endIdx.X && w < m_tileMap.GetLength(0); ++w)
+                    w <= endIdx.X && w < this.Width; ++w)
                 {
                     for (int h = startIdx.Y;
-                        h <= endIdx.Y && h < m_tileMap.GetLength(1); ++h)
+                        h <= endIdx.Y && h < this.Height; ++h)
                     {
-                        SyncTileAt(db, tileArray, w * m_tileMap.GetLength(1) + h);
+                        SyncTileAt(db, tileArray, Util.Utility.TwoDToOneD(w, h, m_tileMap));
                     }
                 }
             }
@@ -217,10 +217,10 @@ namespace ClickWar.Game
 
         protected int SyncTileAt(Util.DBHelper db, BsonArray tileArray, int index)
         {
-            int h = index % m_tileMap.GetLength(1);
-            int w = index / m_tileMap.GetLength(1);
+            int w, h;
+            Util.Utility.OneDToTwoD(index, m_tileMap, out w, out h);
 
-            if (w < m_tileMap.GetLength(0) && h < m_tileMap.GetLength(1))
+            if (w < this.Width && h < this.Height)
             {
                 var tile = m_tileMap[w, h];
                 
@@ -263,43 +263,22 @@ namespace ClickWar.Game
 
         //##################################################################################
 
-        protected int GetDBTileAt(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
-            out BsonDocument doc, out BsonArray arr)
-        {
-            // 타일의 배열이 존재하는 문서를 얻어옴.
-            doc = db.GetDocument("Tiles", "Tiles");
-
-            if (doc != null)
-            {
-                // 문서에서 타일배열을 얻어옴.
-                arr = doc["List"].AsBsonArray;
-                
-
-                int index = tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex;
-                return index;
-            }
-
-
-            arr = null;
-            return -1;
-        }
-
         protected int UploadTileAt(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex)
         {
             // 타일맵 범위 초과시 아무것도 안함.
-            if (tileWidthIndex < 0 || tileWidthIndex >= m_tileMap.GetLength(0)
+            if (tileWidthIndex < 0 || tileWidthIndex >= this.Width
                 ||
-                tileHeightIndex < 0 || tileHeightIndex >= m_tileMap.GetLength(1))
+                tileHeightIndex < 0 || tileHeightIndex >= this.Height)
             {
                 return -1;
             }
 
 
             // 동기화
-            db.UpdateArrayDocument("Tiles", "Tiles", "List", "Index",
+            db.UpdateArrayDocument("Tiles", "List", "Index",
                 new List<KeyValuePair<int, BsonValue>>()
                 {
-                    new KeyValuePair<int, BsonValue>(tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+                    new KeyValuePair<int, BsonValue>(Util.Utility.TwoDToOneD(tileWidthIndex, tileHeightIndex, m_tileMap),
                     m_tileMap[tileWidthIndex, tileHeightIndex].ToBsonDocument())
                 });
 
@@ -314,22 +293,22 @@ namespace ClickWar.Game
             foreach (var location in indexList)
             {
                 // 타일맵 범위 초과시 아무것도 안함.
-                if (location.X < 0 || location.X >= m_tileMap.GetLength(0)
+                if (location.X < 0 || location.X >= this.Width
                     ||
-                    location.Y < 0 || location.Y >= m_tileMap.GetLength(1))
+                    location.Y < 0 || location.Y >= this.Height)
                 {
                     continue;
                 }
 
 
-                int index = location.X * m_tileMap.GetLength(1) + location.Y;
+                int index = Util.Utility.TwoDToOneD(location.X, location.Y, m_tileMap);
 
                 indexItemListNeedUpdate.Add(new KeyValuePair<int, BsonValue>(index,
                     m_tileMap[location.X, location.Y].ToBsonDocument()));
             }
 
             // 동기화
-            db.UpdateArrayDocument("Tiles", "Tiles", "List", "Index",
+            db.UpdateArrayDocument("Tiles", "List", "Index",
                 indexItemListNeedUpdate);
 
 
@@ -339,8 +318,8 @@ namespace ClickWar.Game
         protected void UploadTileOwnerSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
             string oldOwner, string newOwner)
         {
-            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
-                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+            db.ChangeDocumentArrayManyItem("Tiles", "List", "Index",
+                Util.Utility.TwoDToOneD(tileWidthIndex, tileHeightIndex, m_tileMap),
                 "Owner", oldOwner,
                 new Tuple<string, BsonValue, bool>[] {
                     new Tuple<string, BsonValue, bool>("Owner", newOwner, true)
@@ -350,8 +329,8 @@ namespace ClickWar.Game
         protected void UploadTilePowerSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
             string owner, int deltaPower)
         {
-            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
-                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+            db.ChangeDocumentArrayManyItem("Tiles", "List", "Index",
+                Util.Utility.TwoDToOneD(tileWidthIndex, tileHeightIndex, m_tileMap),
                 "Owner", owner,
                 new Tuple<string, BsonValue, bool>[] {
                     new Tuple<string, BsonValue, bool>("Power", deltaPower, false)
@@ -361,8 +340,8 @@ namespace ClickWar.Game
         protected void UploadTileSignSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
             string owner, string newSign)
         {
-            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
-                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+            db.ChangeDocumentArrayManyItem("Tiles", "List", "Index",
+                Util.Utility.TwoDToOneD(tileWidthIndex, tileHeightIndex, m_tileMap),
                 "Owner", owner,
                 new Tuple<string, BsonValue, bool>[] {
                     new Tuple<string, BsonValue, bool>("Sign", newSign, true)
@@ -372,8 +351,8 @@ namespace ClickWar.Game
         protected void UploadTileSafely(Util.DBHelper db, int tileWidthIndex, int tileHeightIndex,
             string oldOwner, string newOwner, int deltaPower, string newSign)
         {
-            db.ChangeDocumentArrayManyItem("Tiles", "Tiles", "List", "Index",
-                tileWidthIndex * m_tileMap.GetLength(1) + tileHeightIndex,
+            db.ChangeDocumentArrayManyItem("Tiles", "List", "Index",
+                Util.Utility.TwoDToOneD(tileWidthIndex, tileHeightIndex, m_tileMap),
                 "Owner", oldOwner,
                 new Tuple<string, BsonValue, bool>[] {
                     new Tuple<string, BsonValue, bool>("Owner", newOwner, true),
@@ -630,9 +609,9 @@ namespace ClickWar.Game
 
         public GameTile GetTileAt(int widthIndex, int heightIndex)
         {
-            if (widthIndex < 0 || widthIndex >= m_tileMap.GetLength(0)
+            if (widthIndex < 0 || widthIndex >= this.Width
                 ||
-                heightIndex < 0 || heightIndex >= m_tileMap.GetLength(1))
+                heightIndex < 0 || heightIndex >= this.Height)
             {
                 return null;
             }
@@ -708,9 +687,9 @@ namespace ClickWar.Game
 
             int maxPower = -42;
 
-            for (int w = 0; w < m_tileMap.GetLength(0); ++w)
+            for (int w = 0; w < this.Width; ++w)
             {
-                for (int h = 0; h < m_tileMap.GetLength(1); ++h)
+                for (int h = 0; h < this.Height; ++h)
                 {
                     var tile = this.GetTileAt(w, h);
 
@@ -733,9 +712,9 @@ namespace ClickWar.Game
         {
             List<Point> resetTileList = new List<Point>();
 
-            for (int w = 0; w < m_tileMap.GetLength(0); ++w)
+            for (int w = 0; w < this.Width; ++w)
             {
-                for (int h = 0; h < m_tileMap.GetLength(1); ++h)
+                for (int h = 0; h < this.Height; ++h)
                 {
                     var tile = m_tileMap[w, h];
 
